@@ -20,14 +20,16 @@ import csrf from "@dr.pogodin/csurf";
 import {config} from './lib/config.ts'
 
 import * as openidClient from 'openid-client';
-import passport from 'passport';
+import passport, {User} from 'passport';
 import { Strategy } from 'openid-client/passport';
+
+
 
 // Extend Express Request type to include user and flash
 declare global {
   namespace Express {
     interface Request {
-      user?: any;
+      user?: User;
       logout: (callback: (err?: Error) => void) => void;
     }
     interface Response {
@@ -37,6 +39,12 @@ declare global {
       };
     }
   }
+}
+
+declare module 'express-session' {
+    interface SessionData {
+        destination_path: string;
+    }
 }
 
 const __dirname = dirname(import.meta.url);
@@ -71,8 +79,8 @@ const csrfProtection = csrf({
 
 // Make CSRF token available to all templates
 app.use((req: Request, res: Response, next: NextFunction) => {
-    if(req.path.startsWith('/token')
-        || req.path.startsWith('/session/end/confirm')
+    if(req.path.startsWith('/token') ||
+        req.path.startsWith('/session/end/confirm')
     ) {
         next();
     } else {

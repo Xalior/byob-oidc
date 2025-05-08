@@ -1,4 +1,3 @@
-import session from "express-session";
 import { Request, Response, Application } from 'express';
 
 export default (app: Application): void => {

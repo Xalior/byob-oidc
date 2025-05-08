@@ -1,5 +1,5 @@
-import { users, confirmation_codes } from "../db/schema";
-import { db } from "../db/index";
+import { users, confirmation_codes } from "../db/schema.ts";
+import { db } from "../db/index.ts";
 import { eq, and, gte } from "drizzle-orm";
 import { Request, Response, NextFunction, Application } from 'express';
 
@@ -22,7 +22,7 @@ export default (app: Application): void => {
 
             // If we found it, mark the user as confirmed, and redir to login
             if(confirmation_code.length) {
-                if(confirmation_code[0].used === true) {
+                if(confirmation_code[0].used > 0) {
                     req.flash('info', "This account has already been activated once!");
 
                     return res.redirect('/login');
@@ -33,13 +33,14 @@ export default (app: Application): void => {
                 // removed from above query, so we can handle error messages instead
 
                 await db.update(users).set({
-                    verified: true,
+                    verified: 1,
                     confirmed_at: new Date(Date.now()),
                     login_attempts: 0,
+                    // @ts-ignore
                 }).where(eq(users.id, confirmation_code[0].user_id));
 
                 await db.update(confirmation_codes).set({
-                    used: true,
+                    used: 1,
                 })
                 .where(
                     eq(confirmation_codes.confirmation_code, query_string)

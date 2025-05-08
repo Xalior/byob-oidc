@@ -4,6 +4,7 @@ import { users } from '../db/schema.ts';
 import { eq } from 'drizzle-orm';
 import { check, validationResult, matchedData } from 'express-validator';
 import { Request, Response, NextFunction, Application } from 'express';
+import {FieldValidationError} from "express-validator/lib/base.js";
 
 export default (app: Application): void => {
     app.get('/profile', ensureAuthenticated, async (req: Request, res: Response) => {
@@ -18,7 +19,7 @@ export default (app: Application): void => {
 
         async (req: Request, res: Response) => {
         try {
-            const validation_errors = validationResult(req)?.errors;
+            const validation_errors = validationResult(req)?.array() as FieldValidationError[];
 
             if(validation_errors && validation_errors.length) {
                 validation_errors.forEach((error) => {

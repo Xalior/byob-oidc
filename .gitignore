@@ -15,3 +15,4 @@ data/*
 guidelines.txt
 .junie
 .env
+docker-compose.yml

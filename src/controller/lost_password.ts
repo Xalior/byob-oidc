@@ -5,6 +5,7 @@ import { eq, and } from "drizzle-orm";
 import { sendPasswordResetEmail } from '../lib/email.ts';
 import { nanoid } from "nanoid";
 import { Request, Response, NextFunction, Application } from 'express';
+import {FieldValidationError} from "express-validator/lib/base.js";
 
 export default (app: Application): void => {
     app.get('/lost_password', async (req: Request, res: Response, next: NextFunction) => {
@@ -28,7 +29,7 @@ export default (app: Application): void => {
                     return res.redirect(`/login?email=${req.body.email}`);
                 }
 
-                const validation_errors = validationResult(req)?.errors;
+                const validation_errors = validationResult(req)?.array() as FieldValidationError[];
                 console.log("validation_errors",validation_errors);
                 if(validation_errors && validation_errors.length) {
                     req.body.errors = [];
