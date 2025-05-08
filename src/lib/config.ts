@@ -20,16 +20,16 @@ export const env = createEnv({
           .transform((s) => s === "true"),
         DEBUG_ADAPTER: z.string()
           .refine((s) => s === "true" || s === "false")
-          .transform((s) => s === "false"),
+          .transform((s) => s === "true"),
             DEBUG_ACCOUNT: z.string()
           .refine((s) => s === "true" || s === "false")
-          .transform((s) => s === "false"),
+          .transform((s) => s === "true"),
         PASSWORD_SALT: z.coerce.number().default(11),
         SMTP_HOST: z.string().nonempty("SMTP relay must not be empty"),
         SMTP_PORT: z.coerce.number().default(25),
         SMTP_SECURE: z.string()
           .refine((s) => s === "true" || s === "false")
-          .transform((s) => s === "false"),
+          .transform((s) => s === "true"),
         SMTP_USER: z.string().optional(),
         SMTP_PASS: z.string().optional(),
     },
@@ -115,8 +115,8 @@ export interface Config {
         port: number;
         secure: boolean;
         auth: {
-            user: string | undefined;
-            pass: string | undefined;
+            user: string;
+            pass: string;
         };
     };
     ttl: {

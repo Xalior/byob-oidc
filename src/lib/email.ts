@@ -4,6 +4,8 @@ import { Request } from 'express';
 
 export const transporter: Transporter = createTransport(config.smtp);
 
+console.log(config.smtp);
+
 export const sendConfirmationEmail = async (email: string, confirmation_code: string): Promise<void> => {
   // Properly format the confirmation URL with a named parameter
   const confirmationUrl = `${config.provider_url}confirm?${confirmation_code}`;
