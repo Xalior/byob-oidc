@@ -20,7 +20,6 @@ import csrf from "@dr.pogodin/csurf";
 import jwks from '../data/jkws.json' with { type: "json" };
 import {config} from './lib/config.ts'
 console.log("jwks: ", jwks);
-console.log("config: ", config);
 
 import * as openidClient from 'openid-client';
 import passport from 'passport';
@@ -44,7 +43,7 @@ declare global {
 
 const __dirname = dirname(import.meta.url);
 
-const { PORT = 5000, ISSUER = `https://localhost:${PORT}` } = process.env;
+const { PORT = 5000, ISSUER = `http://localhost:${PORT}` } = process.env;
 
 // Set up account finder
 config.findAccount = Account.findAccount;
@@ -229,30 +228,32 @@ try {
     const provider = new Provider(config.provider_url, { adapter, ...config });
 
     // If in production, enforce HTTPS by redirecting requests
-    app.enable('trust proxy');
-    provider.proxy = true;
+    if (config.mode === 'production' || config.force_https === true) {
+        app.enable('trust proxy');
+        provider.proxy = true;
 
-    provider.addListener('server_error', (ctx: any, error: any) => {
-        console.log(ctx, error);
-        console.error(JSON.stringify(error, null, 2));
-    });
+        provider.addListener('server_error', (ctx: any, error: any) => {
+            console.log(ctx, error);
+            console.error(JSON.stringify(error, null, 2));
+        });
 
-    app.use((req: Request, res: Response, next: NextFunction) => {
-        if (req.secure) {
-            next();
-        } else if (['GET', 'HEAD'].includes(req.method)) {
-            res.redirect(url.format({
-                protocol: 'https',
-                host: req.get('host'),
-                pathname: req.originalUrl,
-            }));
-        } else {
-            res.status(400).json({
-                error: 'invalid_request',
-                error_description: 'Please use HTTPS for secure communication.',
-            });
-        }
-    });
+        app.use((req: Request, res: Response, next: NextFunction) => {
+            if (req.secure) {
+                next();
+            } else if (['GET', 'HEAD'].includes(req.method)) {
+                res.redirect(url.format({
+                    protocol: 'https',
+                    host: req.get('host'),
+                    pathname: req.originalUrl,
+                }));
+            } else {
+                res.status(400).json({
+                    error: 'invalid_request',
+                    error_description: 'Please use HTTPS for secure communication.',
+                });
+            }
+        });
+    }
 
     // Configure provider routes and middleware
     provider_routes(app, provider);

@@ -1,4 +1,4 @@
-import config from './data/config.js';
+import config from './data/original_config.ts';
 
 export default {
   schema: "./src/db/schema.js",

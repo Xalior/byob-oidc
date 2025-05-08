@@ -12,7 +12,7 @@ export const env = createEnv({
         PATREON_CLIENT_ID: z.string().optional(),
         PATREON_CLIENT_SECRET: z.string().optional(),
         HOSTNAME: z.string().nonempty("must not be empty"),
-        MODE: z.string().default('production'),
+        MODE: z.string().default('dev'),
         DATABASE_URL: z.string().nonempty("MySQL database URL must not be empty"),
         CACHE_URL: z.string().nonempty("REDIS cache must not be empty"),
         CLIENT_FEATURES_REGISTRATION: z.string()
@@ -94,6 +94,7 @@ export interface Config {
         client_id: string;
         client_secret: string;
     };
+    force_https: boolean;
     provider_url: string;
     hostname: string;
     mode: string;
@@ -195,6 +196,8 @@ export const config: Config = {
     password: {
         salt: env.PASSWORD_SALT,
     },
+
+    force_https: true,
 
     smtp: {
         host: env.SMTP_HOST,
