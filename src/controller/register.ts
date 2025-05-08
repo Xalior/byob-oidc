@@ -14,7 +14,7 @@ export default (app: Application): void => {
     app.get('/register', async (req: Request, res: Response, next: NextFunction) => {
         try {
             return res.render('register');
-        } catch (err) {
+        } catch (err: unknown) {
             next(err);
         }
     });
@@ -26,7 +26,8 @@ export default (app: Application): void => {
         }).withMessage("Display name should be between 5 and 64 characters.").escape(),
 
         check('email').trim().notEmpty().isEmail().withMessage('Not a valid e-mail address').custom(
-            async (value: string, {req, loc, path}: {req: Request, loc: string, path: string}) => {
+            async (value: string, meta) => {
+                const req = meta.req;
                 try {
                     const existing_user = (await db.select()
                         .from(users)
@@ -46,9 +47,12 @@ export default (app: Application): void => {
                     } else {
                         return value;
                     }
-                } catch (err) {
+                } catch (err: unknown) {
                     console.log(err);
-                    throw new Error(err as string);
+                    if (err instanceof Error) {
+                        throw err;
+                    }
+                    throw new Error(String(err));
                 }
             }
         ),
@@ -61,7 +65,8 @@ export default (app: Application): void => {
             minSymbols: 0,
         }).withMessage('Strong password required (Min. length 16 characters long and must containing at-least 2 uppercase, 2 lowercase and 2 numeric characters.'),
 
-        check('password_2').trim().custom((value: string, {req, loc, path}: {req: Request, loc: string, path: string}) => {
+        check('password_2').trim().custom((value: string, meta) => {
+            const req = meta.req;
             if (value !== req.body.password_1) {
                 // throw error if passwords do not match
                 throw new Error("Passwords don't match");
@@ -82,7 +87,8 @@ export default (app: Application): void => {
 
                 console.log("validationResult(req)",validationResult(req));
 
-                const validation_errors = validationResult(req)?.errors;
+                const result = validationResult(req);
+                const validation_errors = result.array();
 
                 if(validation_errors && validation_errors.length) {
                     req.body.errors = [];
@@ -120,7 +126,7 @@ export default (app: Application): void => {
 
                 // Redirect to confirmation static page
                 return res.redirect(`/confirm`);
-            } catch (err) {
+            } catch (err: unknown) {
                 next(err);
             }
         });

@@ -8,16 +8,16 @@ import helmet from 'helmet';
 import { dirname } from 'desm';
 import mustacheExpress from 'mustache-express';
 import Provider from 'oidc-provider';
-import { Account } from './models/account';
-import * as log from './lib/log';
-import provider_routes from './provider/express.ts';
-import client_routes from './controller/routes.ts';
+import { Account } from './models/account.js';
+import * as log from './lib/log.js';
+import provider_routes from './provider/express.js';
+import client_routes from './controller/routes.js';
 import morgan from 'morgan';
 import bodyParser from "body-parser";
 import slugify from "slugify";
 import csrf from "@dr.pogodin/csurf";
 
-import {config} from './lib/config.ts'
+import {config} from './lib/config.js'
 
 import * as openidClient from 'openid-client';
 import passport, {User} from 'passport';

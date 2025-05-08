@@ -18,7 +18,7 @@ export default (app: Application): void => {
                 .where(
                     and(
                         eq(confirmation_codes.confirmation_code, query_string),
-                        eq(confirmation_codes.used, false)
+                        eq(confirmation_codes.used, 0)
                     )
                 )
                 .limit(1))[0];
@@ -32,7 +32,7 @@ export default (app: Application): void => {
             return res.render('reset_password', {
                 query_string: query_string
             });
-        } catch (err) {
+        } catch (err: unknown) {
             next(err);
         }
     });
@@ -48,7 +48,8 @@ export default (app: Application): void => {
             minSymbols: 0,
         }).withMessage('Strong password required (Min. length 16 characters long and must containing at-least 2 uppercase, 2 lowercase and 2 numeric characters.'),
 
-        check('password_2').trim().custom((value: string, {req, loc, path}: {req: Request, loc: string, path: string}) => {
+        check('password_2').trim().custom((value: string, meta) => {
+            const req = meta.req;
             if (value !== req.body.password_1) {
                 // throw error if passwords do not match
                 throw new Error("Passwords don't match");
@@ -61,7 +62,8 @@ export default (app: Application): void => {
             try {
                 const query_string = req.url.replace(/^\/reset_password\?/, '');
 
-                const validation_errors = validationResult(req)?.errors;
+                const result = validationResult(req);
+                const validation_errors = result.array();
 
                 if(validation_errors && validation_errors.length) {
                     console.error(validation_errors);
@@ -88,7 +90,7 @@ export default (app: Application): void => {
                     .where(
                         and(
                             eq(confirmation_codes.user_id, users.id),
-                            eq(confirmation_codes.used, false),
+                            eq(confirmation_codes.used, 0),
                             eq(confirmation_codes.confirmation_code, query_string)
                         )
                     )
@@ -103,11 +105,11 @@ export default (app: Application): void => {
                     await db.update(users).set({
                         password: await hashAccountPassword(reset_form.password_1),
                     }).where(
-                        eq(confirmation_code.users.id, users.id)
+                        eq(users.id, confirmation_code.users.id)
                     );
 
                     await db.update(confirmation_codes).set({
-                        used: true,
+                        used: 1,
                     })
                     .where(
                         eq(confirmation_codes.confirmation_code, query_string)
@@ -126,7 +128,7 @@ export default (app: Application): void => {
                     reset_form: req.body,
                     query_string: query_string
                 });
-            } catch (err) {
+            } catch (err: unknown) {
                 next(err);
             }
     });
