@@ -20,6 +20,7 @@ import csrf from "@dr.pogodin/csurf";
 import jwks from '../data/jkws.json' with { type: "json" };
 import {config} from './lib/config.ts'
 console.log("jwks: ", jwks);
+console.log("config: ", config);
 
 import * as openidClient from 'openid-client';
 import passport from 'passport';

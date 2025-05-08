@@ -206,6 +206,18 @@ export const config: Config = {
         },
     },
     // copied from defaults
+
+
+    clients: [
+        // {
+        //     client_id: 'CLIENT_ID',
+        //     client_secret: 'CLIENT_SECRET',
+        //     grant_requirements: ['ADMIN'],
+        //     grant_types: ['refresh_token', 'authorization_code'],
+        //     redirect_uris: ['https://psteniusubi.github.io/oidc-tester/authorization-code-flow.html'],
+        // }
+    ],
+
     ttl: {
         AccessToken: function AccessTokenTTL(ctx, token, client) {
             return token.resourceServer?.accessTokenTTL || 60 * 60; // 1 hour in seconds
