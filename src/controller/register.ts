@@ -6,8 +6,12 @@ import { sendConfirmationEmail} from "../lib/email.js";
 import {nanoid} from "nanoid";
 import {generateAccountId, hashAccountPassword} from "../models/account.ts";
 import { Request, Response, NextFunction, Application } from 'express';
+import config from "../../data/config.ts";
 
 export default (app: Application): void => {
+    console.log("config.client_features.registration",config.client_features.registration);
+    if(!config.client_features.registration) return; //do nothing, feature disabled
+
     app.get('/register', async (req: Request, res: Response, next: NextFunction) => {
         try {
             return res.render('register');
@@ -23,31 +27,32 @@ export default (app: Application): void => {
         }).withMessage("Display name should be between 5 and 64 characters.").escape(),
 
         check('email').trim().notEmpty().isEmail().withMessage('Not a valid e-mail address').custom(
-    async (value: string, {req, loc, path}: {req: Request, loc: string, path: string}) => {
-            try {
-                const existing_user = (await db.select()
-                    .from(users)
-                    .where(eq(users.email, value))
-                    .limit(1))[0];
+            async (value: string, {req, loc, path}: {req: Request, loc: string, path: string}) => {
+                try {
+                    const existing_user = (await db.select()
+                        .from(users)
+                        .where(eq(users.email, value))
+                        .limit(1))[0];
 
-                if (existing_user) {
-                    if (!existing_user.verified) {
-                        throw new Error("User already exists - have you <a href=\"reconfirm\">lost your confirmation link</a>?");
+                    if (existing_user) {
+                        if (!existing_user.verified) {
+                            throw new Error("User already exists - have you <a href=\"reconfirm\">lost your confirmation link</a>?");
+                        }
+
+                        if (existing_user.suspended) {
+                            throw new Error("The account associated with this email address has been suspended.");
+                        }
+
+                        throw new Error("User already exists - do you need to <a href=\"/lost_password\">reset your password</a>?");
+                    } else {
+                        return value;
                     }
-
-                    if (existing_user.suspended) {
-                        throw new Error("The account associated with this email address has been suspended.");
-                    }
-
-                    throw new Error("User already exists - do you need to <a href=\"/lost_password\">reset your password</a>?");
-                } else {
-                    return value;
+                } catch (err) {
+                    console.log(err);
+                    throw new Error(err as string);
                 }
-            } catch (err) {
-                console.log(err);
-                throw new Error(err as string);
             }
-        }),
+        ),
 
         check('password_1').trim().notEmpty().isStrongPassword({
             minLength: 16,
