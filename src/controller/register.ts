@@ -7,6 +7,7 @@ import {nanoid} from "nanoid";
 import {generateAccountId, hashAccountPassword} from "../models/account.ts";
 import { Request, Response, NextFunction, Application } from 'express';
 import {config} from '../lib/config.ts'
+import {FieldValidationError} from "express-validator/lib/base.js";
 
 export default (app: Application): void => {
     if(!config.client_features.registration) return; //do nothing, feature disabled
@@ -88,7 +89,7 @@ export default (app: Application): void => {
                 console.log("validationResult(req)",validationResult(req));
 
                 const result = validationResult(req);
-                const validation_errors = result.array();
+                const validation_errors = result.array() as FieldValidationError[];
 
                 if(validation_errors && validation_errors.length) {
                     req.body.errors = [];

@@ -5,6 +5,7 @@ import {AccessToken, Grant} from "oidc-provider";
 
 console.log("cache: " + config.cache_url);
 
+// @ts-ignore -- this is right, typescript is wrong
 const cache = new Redis(config.cache_url);
 
 function grantKeyFor(id: string): string {

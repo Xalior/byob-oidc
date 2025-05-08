@@ -1,4 +1,3 @@
-import {Context} from "express";
 import { createEnv } from "@t3-oss/env-core";
 import { z} from "zod";
 import dotenv from "dotenv";
@@ -94,7 +93,6 @@ export interface Config {
         client_id: string | undefined;
         client_secret: string | undefined;
     };
-    force_https: boolean;
     provider_url: string;
     hostname: string;
     mode: string;
@@ -135,7 +133,7 @@ export interface Config {
         url: (ctx: KoaContextWithOIDC, interaction: { uid: string }) => string;
     };
     issueRefreshToken: (ctx: KoaContextWithOIDC, client: Client, code: any) => Promise<boolean>;
-    renderError: (ctx: Context, out: any, error: { statusCode?: number }) => void;
+    renderError: (ctx: KoaContextWithOIDC, out: any, error: { statusCode?: number }) => void;
     loadExistingGrant: (ctx: KoaContextWithOIDC) => Promise<any>;
     cookies: {
         keys: string[];
@@ -154,7 +152,7 @@ export interface Config {
             enabled: boolean;
         };
         rpInitiatedLogout: {
-            logoutSource: (ctx: Context, form: string) => Promise<void>;
+            logoutSource: (ctx: KoaContextWithOIDC, form: string) => Promise<void>;
             postLogoutSuccessSource: (ctx: KoaContextWithOIDC) => Promise<void>;
         };
     };
@@ -196,8 +194,6 @@ export const config: Config = {
     password: {
         salt: env.PASSWORD_SALT,
     },
-
-    force_https: true,
 
     smtp: {
         host: env.SMTP_HOST,
@@ -259,7 +255,7 @@ export const config: Config = {
         // console.log("OUTPUT:", out);
         let error_message = "Oops. Something went wrong!";
 
-        if (error.statusCode === 404) {
+        if (error && error.statusCode === 404) {
             error_message = "404: Page Not Found!";
         } else {
             console.log("RENDER ERROR:", error);
@@ -270,19 +266,24 @@ export const config: Config = {
 
     // Do not ask for a grants dialog confirmation - since we a closed circuit network, we grant what we ask for.
     async loadExistingGrant(ctx) {
-        const grantId = ctx.oidc.result?.consent?.grantId
-            || ctx.oidc.session?.grantIdFor(ctx.oidc.client.clientId);
+        if(!ctx.oidc.client) return null;
+        if(!ctx.oidc.session) return null;
+        if(!ctx.oidc.result) return null;
+
+        const grantId = ctx.oidc.result.consent?.grantId
+            || ctx.oidc.session.grantIdFor(ctx.oidc.client.clientId as string);
 
         if (grantId) {
             // console.log("Loading existing grant", ctx.oidc.client, ctx.oidc.session);
             // keep grant expiry aligned with session expiry
             // to prevent consent prompt being requested when grant expires
             const grant = await ctx.oidc.provider.Grant.find(grantId);
+            if(!grant) return null;
 
             // this aligns the Grant ttl with that of the current session
             // if the same Grant is used for multiple sessions, or is set
             // to never expire, you probably do not want this in your code
-            if (ctx.oidc.account && grant.exp < ctx.oidc.session.exp) {
+            if (ctx.oidc.account && (grant.exp as number) < ctx.oidc.session.exp) {
                 grant.exp = ctx.oidc.session.exp;
 
                 await grant.save();

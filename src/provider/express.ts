@@ -51,6 +51,8 @@ interface OIDCProvider {
 }
 
 export default (app: Application, provider: OIDCProvider): void => {
+
+
     app.get('/interaction/:uid', setNoCache, async (req: Request, res: Response, next: NextFunction) => {
         try {
             const {
@@ -166,14 +168,16 @@ export default (app: Application, provider: OIDCProvider): void => {
 
             const mfa_code = await mfaCode.find(req.params.uid);
 
+            if(!mfa_code) {
+                req.flash('error', 'Unexpected MFA Pin lookup request!');
+
+                return res.redirect(`/interaction/${details.jti}`);
+            }
+
             const account = await Account.findAccount(null, mfa_code?.accountId);
 
             if(!account) {
-                await db.update(users).set({
-                    login_attempts: account.profile.user.login_attempts+1,
-                }).where(eq(users.id, account.profile.user.id));
-
-                req.flash('error', 'Unexpected MFA association!');
+                req.flash('error', 'Unexpected account request!');
 
                 return res.redirect(`/interaction/${details.jti}`);
             }

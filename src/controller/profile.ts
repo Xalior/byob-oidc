@@ -1,6 +1,6 @@
-import { ensureAuthenticated } from "../models/account.ts";
-import { db } from '../db/index.ts';
-import { users } from '../db/schema.ts';
+import {ensureAuthenticated, User} from "../models/account.js";
+import { db } from '../db/index.js';
+import { users } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { check, validationResult, matchedData } from 'express-validator';
 import { Request, Response, NextFunction, Application } from 'express';
@@ -31,9 +31,16 @@ export default (app: Application): void => {
             const profile_form = matchedData(req, { includeOptionals: true });
 
             // Update the user's display_name in the database
+
+            const user = req.user as User;
+            if (!user|| !user.sub) {
+                req.flash('error', 'User information not found');
+                return res.redirect('/profile');
+            }
+
             const results = await db.update(users)
                 .set({ display_name: profile_form.display_name })
-                .where(eq(users.account_id, req.user.sub));
+                .where(eq(users.account_id, user.sub));
 
             req.flash('success', 'Profile updated successfully');
             return res.redirect('/profile');

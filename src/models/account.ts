@@ -6,7 +6,7 @@ import {config} from '../lib/config.ts'
 import bcrypt from 'bcryptjs';
 import { Request } from 'express';
 
-export interface User {
+export interface User extends Express.User {
     id: number;
     account_id: string;
     email: string;

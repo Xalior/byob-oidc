@@ -6,6 +6,7 @@ import { sendPasswordResetEmail } from "../lib/email.ts";
 import { nanoid } from "nanoid";
 import { generateAccountId, hashAccountPassword } from "../models/account.ts";
 import { Request, Response, NextFunction, Application } from 'express';
+import {FieldValidationError} from "express-validator/lib/base.js";
 
 export default (app: Application): void => {
     app.get('/reset_password', async (req: Request, res: Response, next: NextFunction) => {
@@ -63,7 +64,7 @@ export default (app: Application): void => {
                 const query_string = req.url.replace(/^\/reset_password\?/, '');
 
                 const result = validationResult(req);
-                const validation_errors = result.array();
+                const validation_errors = result.array() as FieldValidationError[];
 
                 if(validation_errors && validation_errors.length) {
                     console.error(validation_errors);

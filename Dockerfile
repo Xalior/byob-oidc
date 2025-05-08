@@ -14,9 +14,6 @@ RUN pnpm install
 # Copy the rest of the application code
 COPY . .
 
-# Build the application
-#RUN pnpm build
-
 # Create a volume mount point for sensitive data
 VOLUME /app/data
 

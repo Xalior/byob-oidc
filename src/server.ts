@@ -8,7 +8,7 @@ import helmet from 'helmet';
 import { dirname } from 'desm';
 import mustacheExpress from 'mustache-express';
 import Provider from 'oidc-provider';
-import { Account } from './models/account.js';
+import { Account, User as AccountUser } from './models/account.js';
 import * as log from './lib/log.js';
 import provider_routes from './provider/express.js';
 import client_routes from './controller/routes.js';
@@ -20,8 +20,10 @@ import csrf from "@dr.pogodin/csurf";
 import {config} from './lib/config.js'
 
 import * as openidClient from 'openid-client';
-import passport, {User} from 'passport';
+import passport from 'passport';
 import { Strategy } from 'openid-client/passport';
+import {ClientMetadata} from "openid-client";
+import * as http from "node:http";
 
 
 
@@ -29,8 +31,11 @@ import { Strategy } from 'openid-client/passport';
 declare global {
   namespace Express {
     interface Request {
-      user?: User;
-      logout: (callback: (err?: Error) => void) => void;
+        // @ts-ignore
+      user?: AccountUser;
+        // @ts-ignore
+      logout: (done: (err: any) => void) => void;
+      csrfToken: () => string;
     }
     interface Response {
       locals: {
@@ -44,6 +49,7 @@ declare global {
 declare module 'express-session' {
     interface SessionData {
         destination_path: string;
+        remember_me: boolean;
     }
 }
 
@@ -138,7 +144,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
         locals = locals || {};
 
         if(req.user) {
-            const account = (await Account.findAccount(req, (req.user as OIDCUser).sub));
+            const account = (await Account.findAccount(req, (req.user as OIDCUser).sub)) as Account;
             req.user = account.profile['user'];
         }
 
@@ -158,6 +164,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
             if (!html) throw new Error('No HTML rendered');
             orig.call(res, '_layout', {
                 ...renderLocals,
+                // @ts-ignore - this is the optional, callback, signature - tsEmit is confused by there being multiple ones
                 body: html,
             });
         });
@@ -169,8 +176,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 const client_id: string = process.env.CLIENT_ID || "SELF";
 const client_secret: string = process.env.CLIENT_SECRET || "SELF_SECRET";
 
-let server: ReturnType<typeof app.listen>;
-let issuer: openidClient.Issuer<openidClient.Client>;
+let server: http.Server;
+// let issuer: openidClient.Issuer<openidClient.Client>;
+let issuer: openidClient.Configuration;
 
 const provider_url = new URL(config.provider_url);
 
@@ -187,6 +195,7 @@ app.get('/login',
 app.get('/docs/:path',
     function(req: Request, res: Response, next: NextFunction) {
         try{
+            // @ts-ignore - slugify does not need options, this is valid
             const path = slugify(req.params.path);
             return res.render(path);
         } catch (err) {
@@ -231,38 +240,35 @@ passport.deserializeUser((user: any, cb: (err: any, user: any) => void) => {
 try {
     // Initialize database adapter if MongoDB URI is provided
     let adapter: any;
-    ({ default: adapter } = await import('./database_adapter.ts'));
+    ({ default: adapter } = await import('./database_adapter.js'));
 
-    // Set up the OIDC Provider
+    // @ts-ignore - Set up the OIDC Provider -- the config is overloaded with some of our own parts
     const provider = new Provider(config.provider_url, { adapter, ...config });
 
-    // If in production, enforce HTTPS by redirecting requests
-    if (config.mode === 'production' || config.force_https === true) {
-        app.enable('trust proxy');
-        provider.proxy = true;
+    app.enable('trust proxy');
+    provider.proxy = true;
 
-        provider.addListener('server_error', (ctx: any, error: any) => {
-            console.log(ctx, error);
-            console.error(JSON.stringify(error, null, 2));
-        });
+    provider.addListener('server_error', (ctx: any, error: any) => {
+        console.log(ctx, error);
+        console.error(JSON.stringify(error, null, 2));
+    });
 
-        app.use((req: Request, res: Response, next: NextFunction) => {
-            if (req.secure) {
-                next();
-            } else if (['GET', 'HEAD'].includes(req.method)) {
-                res.redirect(url.format({
-                    protocol: 'https',
-                    host: req.get('host'),
-                    pathname: req.originalUrl,
-                }));
-            } else {
-                res.status(400).json({
-                    error: 'invalid_request',
-                    error_description: 'Please use HTTPS for secure communication.',
-                });
-            }
-        });
-    }
+    app.use((req: Request, res: Response, next: NextFunction) => {
+        if (req.secure) {
+            next();
+        } else if (['GET', 'HEAD'].includes(req.method)) {
+            res.redirect(url.format({
+                protocol: 'https',
+                host: req.get('host'),
+                pathname: req.originalUrl,
+            }));
+        } else {
+            res.status(400).json({
+                error: 'invalid_request',
+                error_description: 'Please use HTTPS for secure communication.',
+            });
+        }
+    });
 
     // Configure provider routes and middleware
     provider_routes(app, provider);
@@ -328,7 +334,7 @@ try {
         res.status(500).render('error', {});
     });
 } catch (err) {
-    // Gracefully handle errors
+    // @ts-ignore - even before the server has started up, maybe... Gracefully handle errors
     if (server?.listening) server.close();
     console.error('Error occurred:', err);
     process.exitCode = 1;

@@ -43,7 +43,7 @@
         if (!themeSwitcherText || !activeThemeIcon || !btnToActive) {
             return;
         }
-        
+
         const svgUseElement = btnToActive.querySelector('svg use');
         if (!svgUseElement) {
             return;
@@ -63,7 +63,7 @@
         themeSwitcher.setAttribute('aria-label', themeSwitcherLabel)
 
         if (focus) {
-            themeSwitcher.focus()
+            (themeSwitcher as HTMLElement).focus();
         }
     }
 

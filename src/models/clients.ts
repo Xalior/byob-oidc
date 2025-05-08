@@ -41,7 +41,7 @@ export class Client {
             .limit(1);
 
         // OIDC Client site not found
-        if(!client.length) return null;
+        if(!client.length || client[0]) return null;
 
         return new Client(client[0]);
     }

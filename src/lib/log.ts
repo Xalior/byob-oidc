@@ -5,8 +5,10 @@ const verbose: boolean = process.env.VERBOSE === 'true' || false;
 
 const pad = (num: number): string => (num > 9 ? "" : "0") + num;
 
-const filename_generator = (time: Date | null, index: number): string => {
+const filename_generator = (time: number | Date, index?: number): string => {
     if (!time) return "log/nbn-oidc-provider.log";
+
+    if (typeof time === "number") time = new Date(time);
 
     const month = time.getFullYear() + "" + pad(time.getMonth() + 1);
     const day = pad(time.getDate());
