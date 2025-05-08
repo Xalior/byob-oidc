@@ -17,9 +17,7 @@ import bodyParser from "body-parser";
 import slugify from "slugify";
 import csrf from "@dr.pogodin/csurf";
 
-import jwks from '../data/jkws.json' with { type: "json" };
 import {config} from './lib/config.ts'
-console.log("jwks: ", jwks);
 
 import * as openidClient from 'openid-client';
 import passport from 'passport';
@@ -120,6 +118,9 @@ app.set('view engine', 'mustache');
 app.set('views', path.join(__dirname, 'views'));
 
 const hide_headers: string[] = ['login', 'mfa', 'register'];
+interface OIDCUser {
+    sub: string
+}
 
 app.use((req: Request, res: Response, next: NextFunction) => {
     const orig = res.render;
@@ -129,7 +130,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
         locals = locals || {};
 
         if(req.user) {
-            const account = (await Account.findAccount(req, req.user.sub));
+            const account = (await Account.findAccount(req, (req.user as OIDCUser).sub));
             req.user = account.profile['user'];
         }
 

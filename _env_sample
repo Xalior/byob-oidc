@@ -1,0 +1,49 @@
+# General settings
+HOSTNAME=id.nextbestnetwork.com
+NODE_ENV=production
+
+# Patreon settings
+PATREON_CLIENT_ID=
+PATREON_CLIENT_SECRET=
+
+# Database and cache settings
+DATABASE_URL=mysql://user:pass@host:3306/dbname
+CACHE_URL=redis://host:6379/
+
+# Client features
+CLIENT_FEATURES_REGISTRATION=true
+
+# SMTP settings
+SMTP_HOST=smtp.relay.com
+SMTP_PORT=25
+SMTP_SECURE=false
+SMTP_USER=
+SMTP_PASS=
+
+# Password settings
+PASSWORD_SALT=11
+
+# Cookie keys
+COOKIE_KEYS=some secret key,and also the old rotated away some time ago,and one more
+
+# Feature flags
+FEATURE_CLIENT_CREDENTIALS_ENABLED=true
+FEATURE_INTROSPECTION_ENABLED=true
+FEATURE_DEV_INTERACTIONS_ENABLED=false
+
+# Session settings
+SESSION_SECRET=cookie-key
+
+# Client settings -- these must match what is in the SQL DB
+CLIENT_ID=OWN_CLIENT_ID
+CLIENT_SECRET=OPEN_CLIENT_SECRET
+
+# Claims
+CLAIMS_EMAIL=email,verified,suspended,display_name
+
+# Logging
+VERBOSE=true
+# Debug settings
+DEBUG_ADAPTER=true
+DEBUG_ACCOUNT=true
+

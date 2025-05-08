@@ -1,10 +1,11 @@
-import { check, validationResult, matchedData } from 'express-validator';
+import {check, validationResult, matchedData, ValidationError} from 'express-validator';
 import { users, confirmation_codes } from '../db/schema.ts';
 import { db } from "../db/index.ts";
 import { eq, and } from "drizzle-orm";
 import { sendConfirmationEmail} from "../lib/email.ts";
 import { nanoid } from "nanoid";
 import { Request, Response, NextFunction, Application } from 'express';
+import {FieldValidationError} from "express-validator/lib/base.js";
 
 export default (app: Application): void => {
     app.get('/reconfirm', async (req: Request, res: Response, next: NextFunction) => {
@@ -27,7 +28,7 @@ export default (app: Application): void => {
                     return res.redirect(`/confirm?email=${req.body.email}`);
                 }
 
-                const validation_errors = validationResult(req)?.errors;
+                const validation_errors = validationResult(req)?.array() as FieldValidationError[];
 
                 console.log(validation_errors);
                 if(validation_errors && validation_errors.length) {
@@ -54,10 +55,15 @@ export default (app: Application): void => {
                     .limit(1))[0];
 
                 if (existing_user) {
-                    const [confirmation_code] = await db.insert(confirmation_codes).values({
+                    const confirmation_code_id = (await db.insert(confirmation_codes).values({
                         user_id: existing_user.id,
                         confirmation_code: nanoid(52)
-                    }).returning();  //:FIXME - sqlite
+                    }).$returningId())[0].id;
+
+                    const [confirmation_code] = (await db.select()
+                        .from(confirmation_codes)
+                        .where(eq(confirmation_codes.id, confirmation_code_id))
+                        .limit(1));
 
                     await sendConfirmationEmail(existing_user.email, confirmation_code.confirmation_code);
                 }

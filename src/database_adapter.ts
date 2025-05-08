@@ -1,6 +1,7 @@
 import {Client} from './models/clients.ts';
 import Redis from 'ioredis';
 import {config} from "./lib/config.ts";
+import {AccessToken, Grant} from "oidc-provider";
 
 console.log("cache: " + config.cache_url);
 
@@ -392,7 +393,7 @@ class DatabaseAdapter {
     async revokeByGrantId(grantId: string): Promise<void> {
         const multi = cache.multi();
         const tokens = await cache.lrange(grantKeyFor(grantId), 0, -1);
-        tokens.forEach((token) => multi.del(token));
+        tokens.forEach((token:AccessToken) => multi.del(token));
         multi.del(grantKeyFor(grantId));
         await multi.exec();
     }

@@ -30,6 +30,7 @@
         "@libsql/core": "^0.14.0",
         "@popperjs/core": "^2.11.8",
         "@t3-oss/env-core": "^0.13.4",
+        "@types/oidc-provider": "^9.1.0",
         "bcryptjs": "^3.0.2",
         "body-parser": "^1.20.3",
         "bootstrap": "^5.3.3",
