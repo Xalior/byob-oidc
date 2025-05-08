@@ -12,6 +12,8 @@ This project consists of two main components:
 
 The dual architecture allows for a complete identity management solution where the provider handles the core OIDC protocols while the client provides user-friendly interfaces for managing credentials, accounts, and application access.
 
+For a list of recent changes and updates, see the [Changelog](docs/changelog.md).
+
 ## Package Manager: pnpm
 
 This project uses [pnpm](https://pnpm.io/) as its package manager. Please do not use npm or yarn to install dependencies or run scripts.
@@ -43,10 +45,9 @@ Use pnpm to run scripts defined in package.json:
 
 ```bash
 pnpm start           # Start the server
-pnpm build           # Build the project
+pnpm dev             # Run with watch mode for development
 pnpm run db:generate # Generate database migrations
 pnpm run db:push     # Push database schema changes
-pnpm run nodemon     # Run with nodemon for development
 ```
 
 ### Note
@@ -83,17 +84,18 @@ pnpm run generate-jwks -- -f  # Force overwrite existing keys
 
 ### 2. Configure the Application
 
-Copy the example configuration file and modify it according to your needs:
+Copy the example environment file and modify it according to your needs:
 
 ```bash
-cp data/config.js.example data/config.js
+cp _env_sample .env
 ```
 
-Edit the `data/config.js` file to configure:
+Edit the `.env` file to configure:
 - Database connections
 - OIDC provider settings
 - Email settings
 - Security settings
+- Feature flags
 
 ### 3. Start the Application
 
@@ -103,22 +105,20 @@ pnpm start
 
 For development with auto-reload:
 ```bash
-pnpm run nodemon
+pnpm dev
 ```
 
 ## Project Structure
 
 ### Data Directory
 
-The `data` directory contains configuration and data files:
+The `data` directory contains:
 
-- `config.js`: Main configuration file
-- `config.js.example`: Example configuration template
-- `clients.csv`: OIDC client configurations
+- `page.ts`: Page formatter for customizing the HTML structure of pages
+- `jkws.json`: JSON Web Key Set file generated with our tool
 - `testdata.js`: Test data for development
-- `testdata.js.example`: Example test data template
 
-This directory is mounted as a volume when running in Docker to persist configuration and data.
+This directory is mounted as a volume when running in Docker to persist data.
 
 ## Production Deployment
 
@@ -194,14 +194,22 @@ docker run -p 3000:3000 \
   nbn-oidc-provider
 ```
 
-For detailed Docker instructions, including deployment options and configuration, see [README.docker.md](README.docker.md).
+For detailed Docker instructions, including deployment options and configuration, see [Docker Documentation](docs/docker.md).
 
 ## Development
 
 ### Building Frontend Assets
 
+The project uses webpack for building frontend assets, but there's no dedicated script in package.json. To build frontend assets, use webpack directly:
+
 ```bash
-pnpm build
+npx webpack --mode production
+```
+
+For development with hot reloading:
+
+```bash
+npx webpack serve --mode development
 ```
 
 ### Database Management
@@ -217,10 +225,26 @@ pnpm run db:push
 pnpm run db:remake
 ```
 
-### Running Tests
+### TypeScript
+
+This project is written in TypeScript with full type coverage at the point of linting. TypeScript is executed directly, not transpiled.
 
 ```bash
+# Run TypeScript linting and type checking
+pnpm lint
+```
+
+### Running Tests
+
+The project uses WebDriver.IO for end-to-end testing of authentication flows and other functionality.
+
+```bash
+# Run all tests
 pnpm run wdio
+
+# Run specific test suite
+pnpm run wdio -- --suite auth
+pnpm run wdio -- --suite registration
 ```
 
 ## Features
