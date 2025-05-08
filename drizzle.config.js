@@ -1,10 +1,8 @@
-import config from './data/original_config.ts';
-
 export default {
-  schema: "./src/db/schema.js",
+  schema: "./src/db/schema.ts",
   out: "./drizzle",
   dialect: "mysql",
   dbCredentials: {
-    url: config.database_url
+    url: process.env.DATABASE_URL,
   }
 }; 
