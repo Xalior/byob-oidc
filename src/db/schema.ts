@@ -6,8 +6,8 @@ export const users = mysqlTable('users', {
   account_id: text('account_id').notNull(),
   email: text('email').notNull(),
   password: text('password').notNull(), // Should store hashed passwords only
-  verified: int('verified', { mode: 'boolean' }).notNull().default(false),
-  suspended: int('suspended', { mode: 'boolean' }).notNull().default(false),
+  verified: int('verified').notNull().default(0),
+  suspended: int('suspended').notNull().default(0),
   hmac_key: text('hmac_key'),
   display_name: text('display_name').notNull(),
   confirmation_attempts: int('confirmation_attempts').default(0),
@@ -21,7 +21,7 @@ export const confirmation_codes = mysqlTable('confirmation_codes', {
   id: int('id').primaryKey().autoincrement(),
   user_id: int('user_id').references(() => users.id),
   confirmation_code: text('confirmation_code').notNull(),
-  used: int('used', { mode: 'boolean' }).notNull().default(false),
+  used: int('used').notNull().default(0),
   created_at: timestamp('created_at').notNull().defaultNow(),
 });
 

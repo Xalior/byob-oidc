@@ -12,8 +12,8 @@ export interface User {
     email: string;
     password: string;
     display_name: string;
-    verified: boolean;
-    suspended: boolean;
+    verified: number;
+    suspended: number;
     login_attempts: number;
     [key: string]: any;
 }
@@ -85,8 +85,8 @@ export class Account {
             .where(and
                 (
                     eq(users.email, email),
-                    eq(users.verified, true),
-                    eq(users.suspended, false),
+                    eq(users.verified, 1),
+                    eq(users.suspended, 0),
                 )
             )
             .limit(1))[0];
