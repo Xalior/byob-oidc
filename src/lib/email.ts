@@ -1,4 +1,4 @@
-import config from '../../data/config.ts';
+import {config} from './config.ts'
 import { createTransport, Transporter } from "nodemailer";
 import { Request } from 'express';
 

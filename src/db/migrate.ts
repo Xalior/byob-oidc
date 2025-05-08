@@ -1,6 +1,6 @@
 import { migrate } from 'drizzle-orm/mysql2/migrator';
 import { drizzle } from "drizzle-orm/mysql2";
-import config from '../../data/config.ts';
+import {config} from '../lib/config.ts'
 
 async function main(): Promise<void> {
   try {

@@ -1,5 +1,5 @@
 import { drizzle } from "drizzle-orm/mysql2";
-import config from '../../data/config.ts';
+import {config} from '../lib/config.ts'
 
 export const db = drizzle(config.database_url);
 

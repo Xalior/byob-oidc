@@ -6,10 +6,9 @@ import { sendConfirmationEmail} from "../lib/email.js";
 import {nanoid} from "nanoid";
 import {generateAccountId, hashAccountPassword} from "../models/account.ts";
 import { Request, Response, NextFunction, Application } from 'express';
-import config from "../../data/config.ts";
+import {config} from '../lib/config.ts'
 
 export default (app: Application): void => {
-    console.log("config.client_features.registration",config.client_features.registration);
     if(!config.client_features.registration) return; //do nothing, feature disabled
 
     app.get('/register', async (req: Request, res: Response, next: NextFunction) => {
@@ -76,7 +75,7 @@ export default (app: Application): void => {
         async (req: Request, res: Response, next: NextFunction) => {
             try {
                 if(req.body.confirm_spammer === 'on') {
-                    // Redirect to confirmation static page -- the email= slug only logs the email address in the weblog
+                    // Redirect to confirmation static page -- the email= HOSTNAME only logs the email address in the weblog
                     // it's a red herring in a honeypot ;-)  -- but stored lazily so we can maybe report on it later...
                     return res.redirect(`/confirm?email=${req.body.email}`);
                 }

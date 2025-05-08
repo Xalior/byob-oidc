@@ -1,30 +1,29 @@
-import {Client} from './models/clients.js';
+import {Client} from './models/clients.ts';
 import Redis from 'ioredis';
-import config from "../data/config.ts";
+import {config} from "./lib/config.ts";
 
 console.log("cache: " + config.cache_url);
 
 const cache = new Redis(config.cache_url);
-import epochTime from 'oidc-provider/lib/helpers/epoch_time.js';
 
 function grantKeyFor(id: string): string {
-    return `${config.slug}:grant:${id}`;
+    return `${config.hostname}:grant:${id}`;
 }
 
 function sessionUidKeyFor(id: string): string {
-    return `${config.slug}:sessionUid:${id}`;
+    return `${config.hostname}:sessionUid:${id}`;
 }
 
 function userCodeKeyFor(userCode: string): string {
-    return `${config.slug}:userCode:${userCode}`;
+    return `${config.hostname}:userCode:${userCode}`;
 }
 
 function mfaCodeKeyFor(mfaCode: string): string {
-    return `${config.slug}:mfaCode:${mfaCode}`;
+    return `${config.hostname}:mfaCode:${mfaCode}`;
 }
 
 function confCodeKeyFor(confCode: string): string {
-    return `${config.slug}:confCode:${confCode}`;
+    return `${config.hostname}:confCode:${confCode}`;
 }
 
 const grantable = new Set([
@@ -105,13 +104,13 @@ class DatabaseAdapter {
      * @param {string} id Identifier for the stored instance.
      * @return {string} Fully qualified key used in the key-value store.
      *
-     * The key is namespaced using the configured slug and the model name to
+     * The key is namespaced using the configured hostname and the model name to
      * prevent collisions across different models and environments. This is
      * used for all operations involving storage, retrieval, and deletion.
      *
      */
     key(id: string): string {
-        return `${config.slug}:${this.model}:${id}`;
+        return `${config.hostname}:${this.model}:${id}`;
     }
 
     /**

@@ -23,7 +23,7 @@ export default (app: Application): void => {
             try {
                 if(req.body.confirm_spammer === 'on') {
                     req.flash('info', 'If you have a valid account then a password reset link has been emailed to it.');
-                    // Redirect to confirmation static page -- the email= slug only logs the email address in the weblog
+                    // Redirect to confirmation static page -- the email= hostname only logs the email address in the weblog
                     // it's a red herring in a honeypot ;-)  -- but stored lazily so we can maybe report on it later...
                     return res.redirect(`/login?email=${req.body.email}`);
                 }

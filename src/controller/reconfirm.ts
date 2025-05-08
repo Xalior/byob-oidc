@@ -22,7 +22,7 @@ export default (app: Application): void => {
         async (req: Request, res: Response, next: NextFunction) => {
             try {
                 if(req.body.confirm_spammer === 'on') {
-                    // Redirect to confirmation static page -- the email= slug only logs the email address in the weblog
+                    // Redirect to confirmation static page -- the email= hostname only logs the email address in the weblog
                     // it's a red herring in a honeypot ;-)  -- but stored lazily so we can maybe report on it later...
                     return res.redirect(`/confirm?email=${req.body.email}`);
                 }

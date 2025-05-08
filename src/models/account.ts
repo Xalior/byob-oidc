@@ -2,7 +2,7 @@ import {nanoid} from 'nanoid';
 import { db } from '../db/index.ts';
 import { users } from '../db/schema.ts';
 import { and, eq } from 'drizzle-orm';
-import config from '../../data/config.ts'
+import {config} from '../lib/config.ts'
 import bcrypt from 'bcryptjs';
 import { Request } from 'express';
 
