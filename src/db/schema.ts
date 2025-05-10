@@ -32,6 +32,6 @@ export const clients = mysqlTable('clients', {
   grant_requirements: text('grant_requirements').notNull(),
   grant_types: text('grant_types').notNull(),
   redirect_uris: text('redirect_uris').notNull(),
-  post_logout_redirect_uris: text('post_logout_redirect_uris'),
+  post_logout_redirect_uris: text('post_logout_redirect_uris').notNull(),
   created_at: timestamp('created_at').notNull().defaultNow(),
 });
