@@ -36,8 +36,6 @@ const grantable = new Set([
     'BackchannelAuthenticationRequest',
 ]);
 
-const DEBUG_ADAPTER = false;
-
 const storable = new Set([
     // oidc-provider
     "Grant",
@@ -58,6 +56,15 @@ const storable = new Set([
     "MFACode",
     "ConfirmationCode"
 ]);
+
+function debug(msg: string, obj?: any) {
+    if(config.debug.adapter) {
+        console.debug(msg);
+        if(obj) {
+            console.debug(obj);
+        }
+    }
+}
 
 interface PayloadBase {
     jti?: string;
@@ -251,7 +258,7 @@ class DatabaseAdapter {
          * - exp {number} - timestamp of the replay object cache expiration
          * - iat {number} - timestamp of the replay object cache's creation
          */
-        if(DEBUG_ADAPTER) console.debug('adapter upsert', this.key(id), payload);
+        debug(`adapter.upsert: ${this.key(id)}:`, payload);
 
         const key = this.key(id);
 
@@ -308,13 +315,17 @@ class DatabaseAdapter {
 
         if(this.model==='Client') {
             item = await Client.findByClientId(id);
+            debug(`adapter.find(client): ${this.key(id)}:`, item);
+
             return item;
         }
 
         const key = this.key(id);
         item = await cache.call('JSON.GET', key);
-        if (!item) return undefined;
 
+        debug(`adapter.find: ${this.key(id)}:`, item);
+
+        if (!item) return undefined;
         return JSON.parse(item);
     }
 
@@ -331,6 +342,7 @@ class DatabaseAdapter {
      */
     async findByUserCode(userCode: string): Promise<PayloadBase | undefined> {
         const id = await cache.get(userCodeKeyFor(userCode));
+        debug(`adapter.findByUserCode: ${userCodeKeyFor(userCode)}:`, id);
         if (!id) return undefined;
         return this.find(id);
     }
@@ -347,6 +359,7 @@ class DatabaseAdapter {
      */
     async findByUid(uid: string): Promise<PayloadBase | undefined> {
         const id = await cache.get(sessionUidKeyFor(uid));
+        debug(`adapter.sessionUidKeyFor: ${sessionUidKeyFor(uid)}:`, id);
         if (!id) return undefined;
         return this.find(id);
     }
