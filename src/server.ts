@@ -283,6 +283,14 @@ try {
 
     console.info("Being period of self discovery: ", config.provider_url);
 
+    const asyncTimeout = (ms: number) => {
+        return new Promise((resolve) => {
+            setTimeout(resolve, ms);
+        });
+    };
+
+    await asyncTimeout(3000);
+
     issuer = await openidClient.discovery(
         provider_url,
         client_id,
