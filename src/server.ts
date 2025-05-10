@@ -55,8 +55,6 @@ declare module 'express-session' {
 
 const __dirname = dirname(import.meta.url);
 
-const { PORT = 5000, ISSUER = `http://localhost:${PORT}` } = process.env;
-
 // Set up account finder
 config.findAccount = Account.findAccount;
 
@@ -276,8 +274,8 @@ try {
     app.use(provider.callback());
 
     // Start the server
-    server = app.listen(PORT, () => {
-        console.info(`Application is listening on port ${PORT}`);
+    server = app.listen(process.env.PORT || 5000, () => {
+        console.info(`Application is listening on port ${process.env.PORT || 5000}`);
         console.info(`Check /.well-known/openid-configuration for details.`);
     });
 
