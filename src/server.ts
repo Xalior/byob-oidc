@@ -287,7 +287,7 @@ try {
         });
     };
 
-    await asyncTimeout(3000);
+    await asyncTimeout(10000);
 
     issuer = await openidClient.discovery(
         provider_url,
