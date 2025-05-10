@@ -40,6 +40,8 @@ export class Client {
             .where(eq(clients.client_id, client_id))
             .limit(1);
 
+        console.log("client:", client);
+
         // OIDC Client site not found
         if(!client.length || client[0]) return null;
 
