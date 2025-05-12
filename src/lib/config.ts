@@ -268,13 +268,12 @@ export const config: Config = {
     async loadExistingGrant(ctx) {
         if(!ctx.oidc.client) return null;
         if(!ctx.oidc.session) return null;
-        if(!ctx.oidc.result) return null;
 
-        const grantId = ctx.oidc.result.consent?.grantId
-            || ctx.oidc.session.grantIdFor(ctx.oidc.client.clientId as string);
+        const grantId = (ctx.oidc.result?.consent?.grantId
+            || ctx.oidc.session.grantIdFor(ctx.oidc.client.clientId as string)) as string;
 
-        if (grantId) {
-            // console.log("Loading existing grant", ctx.oidc.client, ctx.oidc.session);
+        if (ctx.oidc.result && grantId) {
+            if(config.debug.account) console.debug("debug.account: loadExistingGrant", ctx);
             // keep grant expiry aligned with session expiry
             // to prevent consent prompt being requested when grant expires
             const grant = await ctx.oidc.provider.Grant.find(grantId);

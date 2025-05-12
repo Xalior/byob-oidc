@@ -4,7 +4,6 @@
 ## Release v0.2.2
 - SMTP_SECURE, DEBUG_ADAPTER, DEBUG_ACCOUNT all now optional env, default false
 
-
 ### Minor changes
 - Full type coverage enforced during linting
 
