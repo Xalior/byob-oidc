@@ -1,5 +1,11 @@
 # Changelog
 
+## Release v0.2.3
+- Fix a bug that stopped new grants being created for fresh apps on the closed circuit network
+- Handle a bug that could have exposed the wrong template variables
+
+### Minor changes
+- Actually wrote the About page
 
 ## Release v0.2.2
 - SMTP_SECURE, DEBUG_ADAPTER, DEBUG_ACCOUNT all now optional env, default false

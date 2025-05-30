@@ -1,4 +1,5 @@
 import home from './home.ts';
+import docs from './docs.ts';
 import register from './register.ts';
 import confirm from './confirm.ts';
 import reconfirm from './reconfirm.ts';
@@ -9,6 +10,7 @@ import { Application } from 'express';
 
 export default (app: Application): void => {
     home(app);
+    docs(app);
     register(app);
     confirm(app);
     reconfirm(app);

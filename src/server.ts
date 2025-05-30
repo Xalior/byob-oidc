@@ -190,18 +190,6 @@ app.get('/login',
     })
 );
 
-app.get('/docs/:path',
-    function(req: Request, res: Response, next: NextFunction) {
-        try{
-            // @ts-ignore - slugify does not need options, this is valid
-            const path = slugify(req.params.path);
-            return res.render(path);
-        } catch (err) {
-            return res.status(404).send("Not Found");
-        }
-    }
-);
-
 app.get('/callback',
     passport.authenticate(provider_url.host, {
         failureRedirect: '/login',
