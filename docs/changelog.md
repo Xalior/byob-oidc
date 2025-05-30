@@ -1,6 +1,6 @@
 # Changelog
 
-## Release v0.2.3
+## Development Branch - Future Release v0.2.3
 - Fix a bug that stopped new grants being created for fresh apps on the closed circuit network
 - Handle a bug that could have exposed the wrong template variables
 
