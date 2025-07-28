@@ -79,7 +79,7 @@ export default (app: Application, provider: OIDCProvider): void => {
                 scopes,
             }));
 
-            console.log("Login Form Session: ", req.session);
+            console.log("Login Form Session: ", req.session, new Date().toISOString());
 
             switch (prompt.name) {
                 case 'login': {

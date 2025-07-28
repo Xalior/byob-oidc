@@ -10,4 +10,9 @@ export default (app: Application): void => {
         }
         return res.render('home');
     });
+
+    app.get('/robots.txt', (req: Request, res: Response) => {
+        res.type('text/plain');
+        res.send('User-agent: *\nDisallow: /');
+    })
 };
