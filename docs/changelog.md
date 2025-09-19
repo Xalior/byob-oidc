@@ -4,6 +4,7 @@
 - Fix a bug that stopped new grants being created for fresh apps on the closed circuit network
 - Handle a bug that could have exposed the wrong template variables
 - robots.txt now tells search engines to go away - we don't want to index our auth portal
+- Update to latest version of dependencies in package.json
 
 ### Minor changes
 - Actually wrote the About page
