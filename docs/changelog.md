@@ -1,6 +1,7 @@
 # Changelog
 
-## Development Branch - Future Release v0.2.3
+## Development Branch - Future Release v0.3.0
+- **WE HAVE THEMES HOW** -- default theme is 'nbn24' - documentation coming soon
 - Fix a bug that stopped new grants being created for fresh apps on the closed circuit network
 - Handle a bug that could have exposed the wrong template variables
 - robots.txt now tells search engines to go away - we don't want to index our auth portal
