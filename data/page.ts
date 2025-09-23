@@ -8,7 +8,7 @@ export const page = (ctx: KoaContextWithOIDC, html: string): void => {
                 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
                 <meta http-equiv="x-ua-compatible" content="ie=edge">
                 <title>NBN:ID</title>
-                <link rel="stylesheet" href="/static/main.css">
+                <link rel="stylesheet" href="/themes/nbn25/main.css">
 
                 <style>
 
@@ -44,7 +44,7 @@ export const page = (ctx: KoaContextWithOIDC, html: string): void => {
                     </symbol>
                 </svg>
 
-                    <a class="nav-link active" aria-current="page" href="/"><img src="/static/nbn-id.png" width="57"></a>
+                    <a class="nav-link active" aria-current="page" href="/"><img src="/themes/nbn25/nbn-id.png" width="57"></a>
 
                 <div class="dropdown position-fixed bottom-0 end-0 mb-3 me-3 bd-mode-toggle">
                     <button class="btn btn-bd-primary py-2 dropdown-toggle d-flex align-items-center" id="bd-theme" type="button" aria-expanded="false" data-bs-toggle="dropdown" aria-label="Toggle theme (dark)">
@@ -112,7 +112,7 @@ export const page = (ctx: KoaContextWithOIDC, html: string): void => {
 
             </div>
 
-            <script src="/static/main.js"></script>            
+            <script src="/themes/nbn25/main.js"></script>            
             </body>
         </html>`;
 }
