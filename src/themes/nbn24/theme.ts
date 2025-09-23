@@ -1,30 +1,12 @@
-import {KoaContextWithOIDC} from "oidc-provider";
-
-export const page = (ctx: KoaContextWithOIDC, html: string): void => {
-    ctx.body = `<!DOCTYPE html>
+const single_render = (html: string)  => {
+    return `<!DOCTYPE html>
         <html>
             <head>
                 <meta charset="utf-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
                 <meta http-equiv="x-ua-compatible" content="ie=edge">
                 <title>NBN:ID</title>
-                <link rel="stylesheet" href="/themes/nbn25/main.css">
-
-                <style>
-
-                    .grant-debug {
-                        text-align: center;
-                        font-family: Fixed, monospace;
-                        width: 100%;
-                        font-size: 12px;
-                        color: #999;
-                    }
-
-                    .grant-debug div {
-                        padding-top: 10px;
-                    }
-
-                </style>
+                <link rel="stylesheet" href="/theme/main.css">
             </head>
             <body class="d-flex align-items-center py-4 bg-body-tertiary">
                 <div class="container w-100 h-100">
@@ -44,7 +26,7 @@ export const page = (ctx: KoaContextWithOIDC, html: string): void => {
                     </symbol>
                 </svg>
 
-                    <a class="nav-link active" aria-current="page" href="/"><img src="/themes/nbn25/nbn-id.png" width="57"></a>
+                    <a class="nav-link active" aria-current="page" href="/"><img src="/theme/nbn-id.png" width="57"></a>
 
                 <div class="dropdown position-fixed bottom-0 end-0 mb-3 me-3 bd-mode-toggle">
                     <button class="btn btn-bd-primary py-2 dropdown-toggle d-flex align-items-center" id="bd-theme" type="button" aria-expanded="false" data-bs-toggle="dropdown" aria-label="Toggle theme (dark)">
@@ -76,35 +58,7 @@ export const page = (ctx: KoaContextWithOIDC, html: string): void => {
                     </ul>
                 </div>
                 ` +
-                // <nav class="navbar navbar-expand-lg">
-                //     <div class="container-fluid">
-                //         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
-                //             <span class="navbar-toggler-icon"></span>
-                //         </button>
-                //         <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
-                //             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                //                 <!-- Left-side navigation links -->
-                //                 <li class="nav-item">
-                //                     <a class="nav-link active" aria-current="page" href="/">Home</a>
-                //                 </li>
-                //                 <li class="nav-item">
-                //                     <a class="nav-link active" aria-current="page" href="/docs/about">About</a>
-                //                 </li>
-                //             </ul>
-                //             <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                //                 <!-- Right-side navigation links -->
-                //                     <li class="nav-item">
-                //                         <a class="nav-link" href="/register">Register</a>
-                //                     </li>
-                //                     <li class="nav-item">
-                //                         <a class="nav-link" href="/login">Login</a>
-                //                     </li>
-                //             </ul>
-                //         </div>
-                //     </div>
-                // </nav>
-
-                `<section class="w-100">
+        `<section class="w-100">
                     <div class="container">
                         ${html}
                     </div>
@@ -112,7 +66,23 @@ export const page = (ctx: KoaContextWithOIDC, html: string): void => {
 
             </div>
 
-            <script src="/themes/nbn25/main.js"></script>            
+            <script src="/theme/main.js"></script>            
             </body>
         </html>`;
 }
+
+export default {
+    name: 'nbn24',
+    page: (html: string)  => single_render,
+    logout: (form: string, hostname: string)  => {
+        return single_render(`<h1>Do you want to sign-out from the Single Sign-On (SSO) System at ${hostname} too?</h1>
+                    ${form}
+                    <button autofocus type="submit" form="op.logoutForm" value="yes" name="logout">Yes, sign me out</button>
+                    <button type="submit" form="op.logoutForm">No, stay signed in</button>`);
+    },
+    loggedout: (html: string)  => {
+        return single_render(`<h1>Sign-out Success</h1>
+                                <p>Your sign-out ${html ? `with ${html}` : ''} was successful.</p>`);
+    },
+    error: (html: string)  => single_render
+};
