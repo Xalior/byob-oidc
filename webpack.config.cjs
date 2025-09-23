@@ -1,10 +1,27 @@
 const path = require('path')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
-    plugins: [new MiniCssExtractPlugin({ filename: '[name]/main.css' })],
+    plugins: [
+        new MiniCssExtractPlugin({ filename: '[name]/main.css' }),
+        new CopyWebpackPlugin({
+            patterns: [
+                {
+                    from: 'src/themes/*/**/*.{png,jpg,jpeg,gif,webp,svg,ico}',
+                    to({ absoluteFilename }) {
+                        // src/themes/<theme>/... → <theme>/...
+                        const rel = absoluteFilename.replace(/.*[\\/]src[\\/]themes[\\/]/, '');
+                        const [theme, ...rest] = rel.split(/[\\/]/);
+                        return `${theme}/${rest.join('/')}`;
+                    },
+                    noErrorOnMissing: true
+                }
+            ]
+        })
+    ],
     entry: {
-        nbn25: './src/themes/nbn25/main.ts',
+        nbn24: './src/themes/nbn24/main.ts',
         xalior: './src/themes/xalior/main.ts'
     },
     output: {
@@ -32,11 +49,19 @@ module.exports = {
                 exclude: /node_modules/
             },
             {
-                mimetype: 'image/svg+xml',
-                scheme: 'data',
+                test: /\.(svg|png|jpe?g|gif|webp|ico)$/i,
+                parser: {
+                    dataUrlCondition: { maxSize: 4 * 1024 } // inline if <= 4KB
+                },
                 type: 'asset/resource',
                 generator: {
-                    filename: '[name]/icons/[hash].svg'
+                    filename: (pathData) => {
+                        const mod = pathData.module;
+                        const resource = mod?.resource || mod?.rootModule?.resource || '';
+                        const m = resource.match(/[\\/]src[\\/]themes[\\/]([^\\/]+)[\\/]/);
+                        const theme = m ? m[1] : 'assets';
+                        return `${theme}/icons/[contenthash][ext][query]`;
+                    }
                 }
             },
             {

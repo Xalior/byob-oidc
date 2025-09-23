@@ -108,8 +108,7 @@ app.use(flash());
 app.use(cors());
 console.log(path.join(__dirname, '../public'));
 
-app.use('/static', express.static(path.join(__dirname, '../public')));
-app.use('/themes', express.static(path.join(__dirname, '../public/themes')));
+app.use('/theme', express.static(path.join(__dirname, '../public/themes/'+config.theme)));
 
 // Set up Helmet for security - Remove "form-action" directive
 const directives = helmet.contentSecurityPolicy.getDefaultDirectives();
