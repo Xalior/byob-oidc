@@ -2,11 +2,14 @@ const path = require('path')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 
 module.exports = {
-    plugins: [new MiniCssExtractPlugin()],
-    entry: './src/themes/nbn25/main.ts',
+    plugins: [new MiniCssExtractPlugin({ filename: '[name]/main.css' })],
+    entry: {
+        nbn25: './src/themes/nbn25/main.ts',
+        xalior: './src/themes/xalior/main.ts'
+    },
     output: {
-        filename: 'main.js',
-        path: path.resolve(__dirname, 'public/themes/nbn25')
+        filename: '[name]/main.js',
+        path: path.resolve(__dirname, 'public/themes')
     },
     resolve: {
         extensions: ['.ts', '.js']
@@ -33,7 +36,7 @@ module.exports = {
                 scheme: 'data',
                 type: 'asset/resource',
                 generator: {
-                    filename: 'icons/[hash].svg'
+                    filename: '[name]/icons/[hash].svg'
                 }
             },
             {
