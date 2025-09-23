@@ -14,6 +14,7 @@ export const env = createEnv({
         PATREON_CLIENT_ID: z.string().optional(),
         PATREON_CLIENT_SECRET: z.string().optional(),
         HOSTNAME: z.string().nonempty("must not be empty"),
+        THEME: z.string().nonempty("must not be empty"),
         MODE: z.string().default('dev'),
         DATABASE_URL: z.string().nonempty("MySQL database URL must not be empty"),
         CACHE_URL: z.string().nonempty("REDIS cache must not be empty"),
@@ -95,6 +96,7 @@ export interface Config {
     };
     provider_url: string;
     hostname: string;
+    theme: string;
     mode: string;
     database_url: string;
     cache_url: string;
@@ -179,6 +181,7 @@ export interface Config {
 export const config: Config = {
     provider_url: `https://${env.HOSTNAME}/`,
     hostname: `${env.HOSTNAME}`,
+    theme: `${env.THEME ? env.THEME : 'nbn25'}`,
     mode: env.MODE,
     database_url: env.DATABASE_URL,
     cache_url: env.CACHE_URL,
