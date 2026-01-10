@@ -22,7 +22,8 @@ module.exports = {
     ],
     entry: {
         nbn24: './src/themes/nbn24/main.ts',
-        xalior: './src/themes/xalior/main.ts'
+        xalior: './src/themes/xalior/main.ts',
+        robotic: './src/themes/robotic/main.ts'
     },
     output: {
         filename: '[name]/main.js',

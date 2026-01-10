@@ -1,0 +1,33 @@
+<div>
+    <h1>ACCESS GRANTED: IDENTIFY</h1>
+    <form autocomplete="off" action="/interaction/{{uid}}/login" method="post">
+        <input type="hidden" name="_csrf" value="{{csrfToken}}">
+
+        <div>
+            <label for="login_email">IDENTIFIER (EMAIL):</label><br>
+            <input  id="login_email"
+                    type="email"
+                    name="login"
+                    placeholder="entity@network.local">
+        </div>
+        <div>
+            <label for="login_password">ACCESS KEY (PASSWORD):</label><br>
+            <input  id="login_password"
+                    type="password"
+                    name="password"
+                    placeholder="********">
+        </div>
+
+        <div>
+            <input type="checkbox" name="remember_me" value="1" id="flexCheckDefault">
+            <label for="flexCheckDefault">PERSIST SESSION</label>
+        </div>
+        <button type="submit">INITIALIZE LOGIN</button>
+        <div>
+            <a href="/lost_password">RECOVER ACCESS KEY</a>
+        </div>
+        <div>
+            <a href="/interaction/{{ uid }}/abort">ABORT OPERATION</a>
+        </div>
+    </form>
+</div>
