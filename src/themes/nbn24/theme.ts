@@ -73,7 +73,7 @@ const single_render = (html: string)  => {
 
 export default {
     name: 'nbn24',
-    page: (html: string)  => single_render,
+    page: (html: string)  => single_render(html),
     logout: (form: string, hostname: string)  => {
         return single_render(`<h1>Do you want to sign-out from the Single Sign-On (SSO) System at ${hostname} too?</h1>
                     ${form}
@@ -84,5 +84,5 @@ export default {
         return single_render(`<h1>Sign-out Success</h1>
                                 <p>Your sign-out ${html ? `with ${html}` : ''} was successful.</p>`);
     },
-    error: (html: string)  => single_render
+    error: (html: string)  => single_render(html)
 };
