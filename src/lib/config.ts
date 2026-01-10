@@ -292,7 +292,14 @@ export const config: Config = {
                 // @param form - form source (id="op.logoutForm") to be embedded in the page and submitted by
                 //   the End-User
                 console.log("FORM:", form);
-                ctx.body = themeApi.logout(form, ctx.host);
+                if (themeApi.logout) {
+                    ctx.body = themeApi.logout(form, ctx.host);
+                } else {
+                    ctx.body = themeApi.page(`<h1>Do you want to sign-out from the Single Sign-On (SSO) System at ${ctx.host} too?</h1>
+                        ${form}
+                        <button autofocus type="submit" form="op.logoutForm" value="yes" name="logout">Yes, sign me out</button>
+                        <button type="submit" form="op.logoutForm">No, stay signed in</button>`);
+                }
             },
             postLogoutSuccessSource: async (ctx) => {
                 // @param ctx - koa request context
@@ -300,7 +307,12 @@ export const config: Config = {
                     clientId, clientName,
                 } = ctx.oidc.client || {}; // client is defined if the user chose to stay logged in with the authorization server
                 const display = clientName || clientId;
-                ctx.body = themeApi.loggedout(clientName || clientId);
+                if (themeApi.loggedout) {
+                    ctx.body = themeApi.loggedout(display);
+                } else {
+                    ctx.body = themeApi.page(`<h1>Sign-out Success</h1>
+                                <p>Your sign-out ${display ? `with ${display}` : ''} was successful.</p>`);
+                }
             }
         }
     },

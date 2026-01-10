@@ -235,7 +235,7 @@ try {
     } = config;
 
     // @ts-ignore - Set up the OIDC Provider -- the config is overloaded with some of our own parts
-    const provider = new Provider(config.provider_url, { adapter, ...config });
+    const provider = new Provider(config.provider_url, { adapter, ...oidcConfig });
 
     app.enable('trust proxy');
     provider.proxy = true;
