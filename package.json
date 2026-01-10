@@ -90,7 +90,7 @@
         "drizzle-kit": "^0.30.2",
         "mini-css-extract-plugin": "^2.9.2",
         "only-allow": "^1.2.1",
-        "pnpm": "^10.10.0",
+        "pnpm": "^10.27.0",
         "postcss-loader": "^8.1.1",
         "sass": "^1.83.4",
         "sass-loader": "^16.0.4",
