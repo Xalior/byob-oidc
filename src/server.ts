@@ -228,6 +228,12 @@ try {
     let adapter: any;
     ({ default: adapter } = await import('./database_adapter.js'));
 
+    // DESTREUCTURE: Remove custom keys that confuse oidc-provider's Koa instance
+    const {
+        provider_url, hostname, theme, mode, database_url, cache_url,
+        debug, client_features, password, smtp, patreon, ...oidcConfig
+    } = config;
+
     // @ts-ignore - Set up the OIDC Provider -- the config is overloaded with some of our own parts
     const provider = new Provider(config.provider_url, { adapter, ...config });
 
@@ -278,7 +284,7 @@ try {
     await asyncTimeout(10000);
 
     issuer = await openidClient.discovery(
-        provider_url,
+        new URL(config.provider_url),
         client_id,
         client_secret,
     );
