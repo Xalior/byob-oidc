@@ -1,0 +1,67 @@
+<div class="login-client-image">
+    {{#client.logoUri}}
+        <img src="{{client.logoUri}}">
+    {{/client.logoUri}}
+</div>
+
+<ul>
+    <ul>
+    {{#noMissingDetails}}
+        <li>the client is asking you to confirm previously given authorization</li>
+    {{/noMissingDetails}}
+    </ul>
+
+    {{#filteredMissingOIDCScope}}
+        <li>scopes:</li>
+        <ul>
+        {{#filteredMissingOIDCScope}}
+            <li>{{.}}</li>
+        {{/filteredMissingOIDCScope}}
+        </ul>
+    {{/filteredMissingOIDCScope}}
+
+    {{#filteredMissingOIDCClaims}}
+        <li>claims:</li>
+        <ul>
+            {{#filteredMissingOIDCClaims}}
+                <li>{{.}}</li>
+            {{/filteredMissingOIDCClaims}}
+        </ul>
+    {{/filteredMissingOIDCClaims}}
+
+    {{#missingResourceScopes}}
+        {{#eachMissingResourceScope}}
+            <li>{{indicator}}:</li>
+            <ul>
+                {{#scopes}}
+                    <li>{{.}}</li>
+                {{/scopes}}
+            </ul>
+        {{/eachMissingResourceScope}}
+    {{/missingResourceScopes}}
+    {{#rar}}
+        <li>authorization_details:</li>
+        <ul>
+            {{#rar}}
+                <li>
+                    <pre>{{jsonString}}</pre>
+                </li>
+            {{/rar}}
+        </ul>
+    {{/rar}}
+
+    {{#isOfflineAccessRequested}}
+        <li>
+            The client is asking to have offline access to this authorization
+            {{#hasPreviouslyGrantedOfflineAccess}}
+                (which you've previously granted)
+            {{/hasPreviouslyGrantedOfflineAccess}}
+        </li>
+    {{/isOfflineAccessRequested}}
+
+</ul>
+
+<form autocomplete="off" action="/interaction/{{uid}}/confirm" method="post">
+    <input type="hidden" name="_csrf" value="{{csrfToken}}">
+    <button autofocus type="submit" class="login login-submit">Continue</button>
+</form>

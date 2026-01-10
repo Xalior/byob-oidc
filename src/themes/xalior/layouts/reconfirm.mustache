@@ -1,0 +1,31 @@
+<div class="row d-flex justify-content-center align-items-center h-100 w-100">
+    <div class="col-12 col-md-9 col-lg-7 col-xl-6">
+
+        <h1 class="text-uppercase justify-content-center mb-5">Lost Confirmation Email</h1>
+        <div class="card" style="border-radius: 15px;">
+            <div class="card-body p-5">
+                <form class="form-signup  m-auto" autocomplete="off" action="/reconfirm" method="post">
+                    <input type="hidden" name="_csrf" value="{{csrfToken}}">
+                    <p>
+                        If you lost your confirmation email, or it expired then you can have another one sent to you by filling in your email address here.
+                    </p>
+                    {{#conf_form.errors.email}}
+                        <div class="invalid-feedback d-block">
+                            {{conf_form.errors.email}}
+                        </div>
+                    {{/conf_form.errors.email}}
+                    <div class="form-floating">
+                        <input  id="email"
+                                class="form-control"
+                                type="email"
+                                name="email"
+                                placeholder="name@example.com">
+                        <label for="email">Email address</label>
+                    </div>
+                    <button class="btn btn-primary w-100 py-2 my-2" type="submit">Resend Confirmation Email</button>
+                    <a class="btn btn-secondary w-100 py-2 my-2" href="/login">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </h1>
+</div>
