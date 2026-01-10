@@ -275,19 +275,36 @@ try {
 
     console.info("Being period of self discovery: ", config.provider_url);
 
-    const asyncTimeout = (ms: number) => {
-        return new Promise((resolve) => {
-            setTimeout(resolve, ms);
-        });
-    };
+    const maxRetries = 30;
+    const retryInterval = 1000;
+    let attempts = 0;
 
-    await asyncTimeout(10000);
+    let discoveredIssuer: openidClient.Configuration | undefined;
 
-    issuer = await openidClient.discovery(
-        new URL(config.provider_url),
-        client_id,
-        client_secret,
-    );
+    while (attempts < maxRetries) {
+        try {
+            discoveredIssuer = await openidClient.discovery(
+                new URL(config.provider_url),
+                client_id,
+                client_secret,
+            );
+            break;
+        } catch (err: any) {
+            attempts++;
+            if (attempts >= maxRetries) {
+                console.error(`Failed to discover issuer after ${maxRetries} attempts.`);
+                throw err;
+            }
+            console.log(`Discovery attempt ${attempts} failed, retrying in ${retryInterval}ms...`);
+            await new Promise((resolve) => setTimeout(resolve, retryInterval));
+        }
+    }
+
+    if (!discoveredIssuer) {
+        throw new Error("Discovery failed: issuer is undefined");
+    }
+
+    issuer = discoveredIssuer;
 
     console.log('Discovered issuer:', issuer.serverMetadata());
 
