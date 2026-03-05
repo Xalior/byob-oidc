@@ -2,7 +2,7 @@
 
 **Branch:** `feature/plugin-architecture`
 **Started:** 2026-03-05
-**Status:** In Progress
+**Status:** Complete
 
 ## Plan
 
@@ -27,9 +27,9 @@ Full migration plan in [MIGRATION_PLAN.md](/MIGRATION_PLAN.md). Five plugin type
 - [x] Cleanup: Strip email.ts to transporter-only
 - [x] Cleanup: Remove users/confirmation_codes from core schema
 - [x] Cleanup: Remove dead imports from docs.ts
-- [ ] Update tests for new plugin structure
-- [ ] Update webpack config for new theme paths
-- [ ] Update Docker/deployment for new env vars
+- [x] Update tests for new plugin structure
+- [x] Update webpack config for new theme paths
+- [ ] Update Docker/deployment for new env vars (future — no Docker changes needed yet)
 
 ## Progress Log
 
@@ -62,6 +62,12 @@ Full migration plan in [MIGRATION_PLAN.md](/MIGRATION_PLAN.md). Five plugin type
 
 None currently.
 
+### 2026-03-05 (session 2 — continued)
+- Tests updated for new import paths
+- Webpack config updated for new theme paths
+- Final sweep: no stale imports remaining
+- All implementation steps complete
+
 ## Commits
 6d78c7c - docs: add plugin architecture migration plan
 ec15631 - wip: start feature/plugin-architecture — init progress tracker
@@ -76,3 +82,5 @@ ec15631 - wip: start feature/plugin-architecture — init progress tracker
 ffd70a5 - refactor: split config.ts into app config + oidc-config.ts
 2693946 - refactor: interaction routes delegate to provider + MFA plugins
 a5eeae1 - refactor: complete server.ts boot sequence with plugin registry
+3473183 - docs: update WIP progress tracker — steps 9-12 complete
+7c9a77e - test: update test imports for plugin architecture paths
