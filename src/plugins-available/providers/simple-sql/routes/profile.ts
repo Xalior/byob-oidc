@@ -1,6 +1,6 @@
-import {ensureAuthenticated, User} from "../models/account.js";
-import { db } from '../db/index.js';
-import { users } from '../db/schema.js';
+import {ensureAuthenticated, User} from "../account.ts";
+import { getDb } from '../db.ts';
+import { users } from '../schema.ts';
 import { eq } from 'drizzle-orm';
 import { check, validationResult, matchedData } from 'express-validator';
 import { Request, Response, NextFunction, Application } from 'express';
@@ -38,7 +38,7 @@ export default (app: Application): void => {
                 return res.redirect('/profile');
             }
 
-            const results = await db.update(users)
+            const results = await getDb().update(users)
                 .set({ display_name: profile_form.display_name })
                 .where(eq(users.account_id, user.sub));
 

@@ -1,10 +1,10 @@
 import { check, validationResult, matchedData } from 'express-validator';
-import { users, confirmation_codes } from '../db/schema.ts';
-import { db } from "../db/index.ts";
+import { users, confirmation_codes } from '../schema.ts';
+import { getDb } from "../db.ts";
 import { eq, and } from "drizzle-orm";
-import { sendPasswordResetEmail } from "../lib/email.ts";
+import { sendPasswordResetEmail } from "../email.ts";
 import { nanoid } from "nanoid";
-import { generateAccountId, hashAccountPassword } from "../models/account.ts";
+import { generateAccountId, hashAccountPassword } from "../account.ts";
 import { Request, Response, NextFunction, Application } from 'express';
 import {FieldValidationError} from "express-validator/lib/base.js";
 
@@ -14,7 +14,7 @@ export default (app: Application): void => {
             const query_string = req.url.replace(/^\/reset_password\?/, '');
 
             // Search for a confirmation code that matches the raw query string
-            const confirmation_code = (await db.select()
+            const confirmation_code = (await getDb().select()
                 .from(confirmation_codes)
                 .where(
                     and(
@@ -85,7 +85,7 @@ export default (app: Application): void => {
                 const age_limit = new Date(Date.now() - (60*30));
 
                 // Search for a confirmation code that matches the raw query string
-                const confirmation_code = (await db.select()
+                const confirmation_code = (await getDb().select()
                     .from(confirmation_codes)
                     .innerJoin(users, eq(confirmation_codes.user_id, users.id))
                     .where(
@@ -103,13 +103,13 @@ export default (app: Application): void => {
 
                 // If we found it, mark the user as confirmed, and redir to login
                 if(confirmation_code?.users?.email === reset_form.email) {
-                    await db.update(users).set({
+                    await getDb().update(users).set({
                         password: await hashAccountPassword(reset_form.password_1),
                     }).where(
                         eq(users.id, confirmation_code.users.id)
                     );
 
-                    await db.update(confirmation_codes).set({
+                    await getDb().update(confirmation_codes).set({
                         used: 1,
                     })
                     .where(

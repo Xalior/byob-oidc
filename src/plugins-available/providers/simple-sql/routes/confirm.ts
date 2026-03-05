@@ -1,5 +1,5 @@
-import { users, confirmation_codes } from "../db/schema.ts";
-import { db } from "../db/index.ts";
+import { users, confirmation_codes } from "../schema.ts";
+import { getDb } from "../db.ts";
 import { eq, and, gte } from "drizzle-orm";
 import { Request, Response, NextFunction, Application } from 'express';
 
@@ -11,7 +11,7 @@ export default (app: Application): void => {
 
             console.log("query_string:", query_string);
             // Search for a confirmation code that matches the raw query string
-            const confirmation_code = await db.select()
+            const confirmation_code = await getDb().select()
             .from(confirmation_codes)
             .where(
                 eq(confirmation_codes.confirmation_code, query_string)
@@ -32,14 +32,14 @@ export default (app: Application): void => {
                 //                     gte(confirmation_codes.created_at, age_limit)
                 // removed from above query, so we can handle error messages instead
 
-                await db.update(users).set({
+                await getDb().update(users).set({
                     verified: 1,
                     confirmed_at: new Date(Date.now()),
                     login_attempts: 0,
                     // @ts-ignore
                 }).where(eq(users.id, confirmation_code[0].user_id));
 
-                await db.update(confirmation_codes).set({
+                await getDb().update(confirmation_codes).set({
                     used: 1,
                 })
                 .where(
