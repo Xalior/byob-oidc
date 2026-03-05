@@ -14,8 +14,9 @@ RUN pnpm install
 # Copy the rest of the application code
 COPY . .
 
-# Create a volume mount point for sensitive data
-VOLUME /app/data
+# Create data volume and external plugin directory structure
+VOLUME /data
+RUN mkdir -p /data/plugins/providers /data/plugins/sessions /data/plugins/themes /data/plugins/mfa /data/plugins/extensions
 
 # Expose the port the app runs on
 #EXPOSE 5000

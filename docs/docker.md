@@ -31,7 +31,7 @@ docker-compose up
 
 ```bash
 mkdir -p data
-docker run -p 5000:5000 -v $(pwd)/data:/app/data byob-oidc
+docker run -p 5000:5000 -v $(pwd)/data:/data byob-oidc
 ```
 
 ## Environment Variables
@@ -42,7 +42,7 @@ Key variables for Docker deployment:
 
 ```bash
 docker run -p 5000:5000 \
-  -v $(pwd)/data:/app/data \
+  -v $(pwd)/data:/data \
   -e NODE_ENV=production \
   -e HOSTNAME=id.example.com \
   -e SESSION_SECRET=your-secure-secret \
@@ -84,9 +84,46 @@ This ensures your database schema is always up-to-date, handling both fresh inst
 
 ## Data Volume
 
-The `/data` directory is mounted as a volume and contains:
-- JSON Web Key Set (`jwks.json`) — generated with `pnpm run generate-jwks`
-- Page formatter (`page.ts`)
+The `/data` directory is mounted as a Docker volume and contains:
+
+```
+/data/
+  jwks.json          # JSON Web Key Set (generated with pnpm run generate-jwks)
+  plugins/           # External plugin bundles
+    providers/       # Provider plugins (e.g., example-csv/)
+    sessions/        # Session plugins
+    themes/          # Theme plugins
+    mfa/             # MFA plugins (e.g., example-captcha/)
+    extensions/      # Extension plugins
+```
+
+### External Plugins
+
+Place prebuilt plugin bundles in `/data/plugins/{type}/{name}/index.js`. The app scans this directory on startup.
+
+```bash
+# Example: install an external CSV provider and captcha MFA
+mkdir -p data/plugins/providers/example-csv
+mkdir -p data/plugins/mfa/example-captcha
+
+cp my-csv-plugin/dist/index.js data/plugins/providers/example-csv/
+cp my-captcha-plugin/dist/index.js data/plugins/mfa/example-captcha/
+```
+
+Then configure via environment variables:
+
+```bash
+docker run -p 5000:5000 \
+  -v $(pwd)/data:/data \
+  -e PROVIDER=example-csv \
+  -e MFA=example-captcha \
+  -e CSV_USERS_FILE=/data/users.csv \
+  byob-oidc
+```
+
+The `PLUGIN_DIR` env var controls where external plugins are loaded from (default: `/data/plugins`). You can override it if your plugins live elsewhere.
+
+See [External Plugin Development](plugins/deploying-plugins.md) for how to build your own plugins.
 
 ## Deployment Options
 
@@ -102,7 +139,7 @@ docker push your-registry.com/byob-oidc
 
 # On target server:
 docker pull your-registry.com/byob-oidc
-docker run -p 5000:5000 -v /path/to/data:/app/data your-registry.com/byob-oidc
+docker run -p 5000:5000 -v /path/to/data:/data your-registry.com/byob-oidc
 ```
 
 ### Option 3: Export/Import
@@ -111,7 +148,7 @@ docker run -p 5000:5000 -v /path/to/data:/app/data your-registry.com/byob-oidc
 docker save -o byob-oidc.tar byob-oidc
 # Transfer to target server
 docker load -i byob-oidc.tar
-docker run -p 5000:5000 -v /path/to/data:/app/data byob-oidc
+docker run -p 5000:5000 -v /path/to/data:/data byob-oidc
 ```
 
 ## Security
