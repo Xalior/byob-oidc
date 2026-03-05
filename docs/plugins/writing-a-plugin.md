@@ -352,18 +352,37 @@ This is by design -- plugins own their configuration. Document your required env
 
 ## Using Other Plugins
 
-Plugins can access other loaded plugins through the registry:
+**Built-in plugins** can import directly from the registry:
 
 ```typescript
 import { getSession } from '../../../plugins/registry.ts';
 
-// Use the session cache
 const session = getSession();
 await session.set('my-key', { data: 'value' }, 3600);
 const data = await session.get('my-key');
 ```
 
-**Important:** Only use the registry during operation (after `initialize()`), never during module load time. The registry isn't populated until the boot sequence runs.
+**External plugins** should use the injected services instead:
+
+```typescript
+let services: any;
+
+const plugin = {
+    async initialize(config: PluginConfig) {
+        services = config.services;
+    },
+
+    async someMethod() {
+        const session = services.getSession();
+        await session.set('my-key', { data: 'value' }, 3600);
+
+        // Send an email
+        await services.transporter.sendMail({ from: '...', to: '...', subject: '...' });
+    },
+};
+```
+
+**Important:** Only use the registry/services during operation (after `initialize()`), never during module load time. The registry isn't populated until the boot sequence runs.
 
 ## Error Handling
 
@@ -373,7 +392,9 @@ const data = await session.get('my-key');
 
 ## Installing Your Plugin
 
-Place your plugin directory in the appropriate location under `plugins-available/`:
+### Built-in (Source Tree)
+
+Place your plugin directory under `plugins-available/`:
 
 ```
 src/plugins-available/
@@ -384,14 +405,97 @@ src/plugins-available/
   extensions/my-extension/index.ts
 ```
 
+### External (Prebuilt Bundle)
+
+Build your plugin to ESM JavaScript and place it in the external plugin directory:
+
+```
+/data/plugins/
+  providers/my-provider/index.js
+  mfa/my-mfa/index.js
+```
+
 Then set the corresponding env var:
 
 ```env
 PROVIDER=my-provider
-SESSION=my-session
-THEME=my-theme
 MFA=my-mfa
-EXTENSIONS=my-extension
 ```
 
-See [Deploying Plugins](./deploying-plugins.md) for how to install prebuilt plugins from outside the source tree.
+External plugins take precedence over built-in plugins with the same name.
+
+## Building an External Plugin
+
+External plugins are fully standalone projects with their own build tooling. Here's the typical setup:
+
+### 1. Initialize the project
+
+```bash
+mkdir my-plugin && cd my-plugin
+npm init -y
+npm install --save-dev @byob-oidc/plugin-types esbuild typescript @types/node
+```
+
+### 2. Write your plugin
+
+```typescript
+// src/index.ts
+import type { MFAPlugin, PluginConfig } from '@byob-oidc/plugin-types';
+
+const plugin: MFAPlugin = {
+    meta: { name: 'my-mfa', version: '1.0.0', type: 'mfa' },
+    async initialize(config: PluginConfig) { /* ... */ },
+    async requiresChallenge() { return true; },
+    async issueChallenge(account, req) { /* ... */ return req.params.uid; },
+    async verifyChallenge(challengeId, req) { /* ... */ return true; },
+};
+export default plugin;
+```
+
+### 3. Build
+
+Add to `package.json`:
+
+```json
+{
+    "type": "module",
+    "scripts": {
+        "build": "esbuild src/index.ts --bundle --platform=node --format=esm --outfile=dist/index.js"
+    }
+}
+```
+
+```bash
+npm run build
+```
+
+### 4. Deploy
+
+```bash
+mkdir -p /data/plugins/mfa/my-mfa
+cp dist/index.js /data/plugins/mfa/my-mfa/
+```
+
+### Runtime Dependencies
+
+If your plugin imports npm packages at runtime, either:
+
+- **Bundle them** (esbuild does this by default)
+- **Mark as external** and copy `node_modules/` alongside `index.js`
+
+```bash
+# Bundle everything except bcryptjs (native module)
+esbuild src/index.ts --bundle --platform=node --format=esm \
+  --outfile=dist/index.js --external:bcryptjs
+```
+
+### Example Plugins
+
+See the `examples/plugins/` directory for complete, working examples:
+
+- **[example-csv-provider](../../examples/plugins/example-csv-provider/)** — CSV flat-file auth with bcrypt
+- **[example-captcha-mfa](../../examples/plugins/example-captcha-mfa/)** — Random question captcha
+
+Each has its own `package.json`, `tsconfig.json`, build script, and README.
+
+See [Deploying Plugins](./deploying-plugins.md) for production deployment details.
