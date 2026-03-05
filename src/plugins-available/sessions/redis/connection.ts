@@ -1,14 +1,15 @@
 import Redis from 'ioredis';
+import type { Redis as RedisType } from 'ioredis';
 
-let cache: Redis | null = null;
+let cache: RedisType | null = null;
 
-export function createConnection(url: string): Redis {
+export function createConnection(url: string): RedisType {
     // @ts-ignore -- ioredis constructor typing is wrong for URL strings
     cache = new Redis(url);
     return cache;
 }
 
-export function getConnection(): Redis {
+export function getConnection(): RedisType {
     if (!cache) {
         throw new Error('Redis connection not initialized. Call createConnection() first.');
     }
