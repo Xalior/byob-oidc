@@ -27,6 +27,6 @@ describe('Authentication:Logout', () => {
 
     it("01: Can logout...", async () => {
         await AuthPage.logout();
-        await expect(AuthPage.navbar).toHaveText(expect.stringContaining('Login'));
+        await expect(AuthPage.navbar).toHaveText(expect.stringMatching(/login/i));
     });
 })

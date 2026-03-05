@@ -4,7 +4,7 @@
         <input type="hidden" name="_csrf" value="{{csrfToken}}">
 
         {{#reg_form.errors.display_name}}
-            <div class="alert alert-danger">ERROR: {{reg_form.errors.display_name}}</div>
+            <div class="alert alert-danger invalid-feedback d-block">ERROR: {{reg_form.errors.display_name}}</div>
         {{/reg_form.errors.display_name}}
         <div>
             <label for="display_name">ENTITY NAME:</label><br>
@@ -12,7 +12,7 @@
         </div>
 
         {{#reg_form.errors.email}}
-            <div class="alert alert-danger">ERROR: {{reg_form.errors.email}}</div>
+            <div class="alert alert-danger invalid-feedback d-block">ERROR: {{reg_form.errors.email}}</div>
         {{/reg_form.errors.email}}
         <div>
             <label for="login_email">ENTITY EMAIL:</label><br>
@@ -20,7 +20,7 @@
         </div>
 
         {{#reg_form.errors.password_1}}
-            <div class="alert alert-danger">ERROR: {{reg_form.errors.password_1}}</div>
+            <div class="alert alert-danger invalid-feedback d-block">ERROR: {{reg_form.errors.password_1}}</div>
         {{/reg_form.errors.password_1}}
         <div>
             <label for="login_password">ACCESS KEY:</label><br>
@@ -28,7 +28,7 @@
         </div>
 
         {{#reg_form.errors.password_2}}
-            <div class="alert alert-danger">ERROR: {{reg_form.errors.password_2}}</div>
+            <div class="alert alert-danger invalid-feedback d-block">ERROR: {{reg_form.errors.password_2}}</div>
         {{/reg_form.errors.password_2}}
         <div>
             <label for="login_password_confirm">CONFIRM ACCESS KEY:</label><br>
@@ -36,7 +36,7 @@
         </div>
 
         {{#reg_form.errors.agree_tos}}
-            <div class="alert alert-danger">ERROR: {{reg_form.errors.agree_tos}}</div>
+            <div class="alert alert-danger invalid-feedback d-block">ERROR: {{reg_form.errors.agree_tos}}</div>
         {{/reg_form.errors.agree_tos}}
         <div>
             <input type="checkbox" id="agree_tos" name="agree_tos" {{#reg_form.agree_tos}}checked{{/reg_form.agree_tos}}>

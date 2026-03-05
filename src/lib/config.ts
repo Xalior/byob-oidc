@@ -47,9 +47,15 @@ export const env = createEnv({
 });
 
 const themeSpec = new URL(`../themes/${env.THEME}/theme.ts`, import.meta.url).href;
-const themeModule = await import(themeSpec);
-const themeApi = themeModule.default; // { name, page, logout, loggedout, error }
-themeApi.site_name = env.SITE_NAME;
+let _themeApi: any;
+async function getThemeApi() {
+    if (!_themeApi) {
+        const themeModule = await import(themeSpec);
+        _themeApi = themeModule.default; // { name, page, logout, loggedout, error }
+        _themeApi.site_name = env.SITE_NAME;
+    }
+    return _themeApi;
+}
 
 interface Token {
     resourceServer?: ResourceServer;
@@ -222,7 +228,7 @@ export const config: Config = {
             console.log("RENDER ERROR:", error);
         }
 
-        ctx.body = themeApi.page(error_message);
+        ctx.body = (await getThemeApi()).page(error_message);
     },
 
     // Do not ask for a grants dialog confirmation - since we a closed circuit network, we grant what we ask for.
@@ -296,6 +302,7 @@ export const config: Config = {
                 // @param form - form source (id="op.logoutForm") to be embedded in the page and submitted by
                 //   the End-User
                 console.log("FORM:", form);
+                const themeApi = await getThemeApi();
                 if (themeApi.logout) {
                     ctx.body = themeApi.logout(form, ctx.host);
                 } else {
@@ -311,6 +318,7 @@ export const config: Config = {
                     clientId, clientName,
                 } = ctx.oidc.client || {}; // client is defined if the user chose to stay logged in with the authorization server
                 const display = clientName || clientId;
+                const themeApi = await getThemeApi();
                 if (themeApi.loggedout) {
                     ctx.body = themeApi.loggedout(display);
                 } else {

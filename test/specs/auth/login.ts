@@ -51,6 +51,6 @@ describe('Authentication:Login', () => {
 
         expect(mfa_pin !== null).toBeTruthy();
         await AuthPage.confirm_login(mfa_pin.pin);
-        await expect(AuthPage.navbar).toHaveText(expect.stringContaining('Logout'));
+        await expect(AuthPage.navbar).toHaveText(expect.stringMatching(/logout/i));
     });
 })
