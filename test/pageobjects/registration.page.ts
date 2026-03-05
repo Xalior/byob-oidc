@@ -1,4 +1,4 @@
-import { $, browser } from '@wdio/globals'
+import { browser } from '@wdio/globals'
 import Page from './page.ts';
 import { initializeDb, getDb } from "../../src/plugins-available/providers/simple-sql/db.ts";
 import { config } from "../../src/lib/config.ts";
@@ -58,6 +58,10 @@ class RegistrationPage extends Page {
         await this.inputPassword1.setValue(password1);
         await this.inputPassword2.setValue(password2);
         await this.btnSubmit.click();
+        await browser.waitUntil(
+            async () => (await browser.execute(() => document.readyState)) === 'complete',
+            { timeout: 10000, timeoutMsg: 'Page did not load after register submit' }
+        );
     }
 
     /**

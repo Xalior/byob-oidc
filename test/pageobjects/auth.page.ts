@@ -56,17 +56,30 @@ class AuthPage extends Page {
         await this.inputEmail.setValue(email);
         await this.inputPassword.setValue(password);
         await this.btnSubmit.click();
+        // Wait for Safari to finish navigating after form POST
+        await browser.waitUntil(
+            async () => (await browser.execute(() => document.readyState)) === 'complete',
+            { timeout: 10000, timeoutMsg: 'Page did not load after login submit' }
+        );
     }
 
     async logout(): Promise<void> {
         await super.open('/logout');
         await this.btnSubmit.click();
+        await browser.waitUntil(
+            async () => (await browser.execute(() => document.readyState)) === 'complete',
+            { timeout: 10000, timeoutMsg: 'Page did not load after logout submit' }
+        );
     }
 
     async lost_password(email: string): Promise<void> {
         await super.open('/lost_password');
         await this.inputEmail.setValue(email);
         await this.btnSubmit.click();
+        await browser.waitUntil(
+            async () => (await browser.execute(() => document.readyState)) === 'complete',
+            { timeout: 10000, timeoutMsg: 'Page did not load after lost_password submit' }
+        );
     }
 
     async reset_password(reset_code: string, admin_email: string, admin_password: string): Promise<void> {
@@ -75,11 +88,19 @@ class AuthPage extends Page {
         await this.inputPassword.setValue(admin_password);
         await this.inputPasswordConfirm.setValue(admin_password);
         await this.btnSubmit.click();
+        await browser.waitUntil(
+            async () => (await browser.execute(() => document.readyState)) === 'complete',
+            { timeout: 10000, timeoutMsg: 'Page did not load after reset_password submit' }
+        );
     }
 
     async confirm_login(pin: string): Promise<void> {
         await this.inputLoginMFA.setValue(pin);
         await this.btnSubmit.click();
+        await browser.waitUntil(
+            async () => (await browser.execute(() => document.readyState)) === 'complete',
+            { timeout: 10000, timeoutMsg: 'Page did not load after MFA submit' }
+        );
     }
     
     /**
