@@ -1,9 +1,12 @@
-import { Plugin, PluginType, PluginConfig } from './types.ts';
+import { Plugin, PluginType, PluginConfig, PluginServices } from './types.ts';
 import { ThemePlugin } from './theme/interface.ts';
 import { ProviderPlugin } from './provider/interface.ts';
 import { SessionPlugin } from './session/interface.ts';
 import { MFAPlugin } from './mfa/interface.ts';
 import { ExtensionPlugin } from './extension/interface.ts';
+import { existsSync, readdirSync, statSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
+import * as path from 'node:path';
 
 interface LoadedPlugins {
     theme: ThemePlugin[];
@@ -14,6 +17,7 @@ interface LoadedPlugins {
 }
 
 let defaultThemeName: string = '';
+let externalPluginDir: string = '';
 
 const plugins: LoadedPlugins = {
     theme: [],
@@ -64,7 +68,7 @@ function validatePlugin(plugin: any, type: PluginType): void {
     }
 }
 
-/** Map plugin type to its directory name under plugins-available/ */
+/** Map plugin type to its directory name under plugins-available/ and external dir */
 const TYPE_DIRS: Record<PluginType, string> = {
     theme: 'themes',
     provider: 'providers',
@@ -73,15 +77,37 @@ const TYPE_DIRS: Record<PluginType, string> = {
     extension: 'extensions',
 };
 
+/**
+ * Resolve the import path for a plugin. Checks:
+ * 1. External dir: $PLUGIN_DIR/{type}/{name}/index.js
+ * 2. Built-in:     src/plugins-available/{type}/{name}/index.ts
+ *
+ * External plugins (prebuilt JS) take precedence over built-in (TypeScript).
+ */
+function resolvePluginPath(type: PluginType, name: string): { href: string; external: boolean } {
+    // Check external directory first
+    if (externalPluginDir) {
+        const externalDir = path.join(externalPluginDir, TYPE_DIRS[type], name);
+        const jsEntry = path.join(externalDir, 'index.js');
+        if (existsSync(jsEntry)) {
+            return { href: pathToFileURL(jsEntry).href, external: true };
+        }
+    }
+
+    // Fall back to built-in plugins-available (TypeScript source)
+    const builtinPath = new URL(
+        `../plugins-available/${TYPE_DIRS[type]}/${name}/index.ts`,
+        import.meta.url
+    ).href;
+    return { href: builtinPath, external: false };
+}
+
 async function loadPlugin<T extends Plugin>(
     type: PluginType,
     name: string,
     config: PluginConfig
 ): Promise<T> {
-    const pluginPath = new URL(
-        `../plugins-available/${TYPE_DIRS[type]}/${name}/index.ts`,
-        import.meta.url
-    ).href;
+    const { href: pluginPath, external } = resolvePluginPath(type, name);
 
     let module: any;
     try {
@@ -109,7 +135,8 @@ async function loadPlugin<T extends Plugin>(
         );
     }
 
-    console.log(`Plugin loaded: ${type}/${name} v${plugin.meta.version}`);
+    const source = external ? 'external' : 'built-in';
+    console.log(`Plugin loaded: ${type}/${name} v${plugin.meta.version} (${source})`);
     return plugin as T;
 }
 
@@ -118,15 +145,13 @@ function parseList(value: string): string[] {
     return value.split(',').map(s => s.trim()).filter(Boolean);
 }
 
-/** Discover all available plugin directories for a given type */
-async function discoverAvailable(type: PluginType): Promise<string[]> {
-    const { readdirSync, statSync } = await import('node:fs');
-    const baseDir = new URL(`../plugins-available/${TYPE_DIRS[type]}/`, import.meta.url);
+/** List subdirectories of a given path */
+function listSubdirectories(dirPath: string): string[] {
+    if (!existsSync(dirPath)) return [];
     try {
-        const entries = readdirSync(baseDir);
-        return entries.filter(name => {
+        return readdirSync(dirPath).filter(name => {
             try {
-                return statSync(new URL(name, baseDir)).isDirectory();
+                return statSync(path.join(dirPath, name)).isDirectory();
             } catch {
                 return false;
             }
@@ -136,12 +161,53 @@ async function discoverAvailable(type: PluginType): Promise<string[]> {
     }
 }
 
+/**
+ * Discover all available plugin directories for a given type.
+ * Scans both built-in and external directories; external overrides built-in.
+ */
+function discoverAvailable(type: PluginType): string[] {
+    const typeDir = TYPE_DIRS[type];
+
+    // Built-in plugins
+    const builtinBase = new URL(`../plugins-available/${typeDir}/`, import.meta.url);
+    let builtinPath: string;
+    try {
+        builtinPath = new URL(builtinBase).pathname;
+    } catch {
+        builtinPath = '';
+    }
+    const builtinNames = listSubdirectories(builtinPath);
+
+    // External plugins
+    const externalNames: string[] = externalPluginDir
+        ? listSubdirectories(path.join(externalPluginDir, typeDir))
+        : [];
+
+    // Merge: external takes precedence (deduplicate)
+    const seen = new Set<string>();
+    const result: string[] = [];
+
+    for (const name of externalNames) {
+        seen.add(name);
+        result.push(name);
+    }
+
+    for (const name of builtinNames) {
+        if (!seen.has(name)) {
+            result.push(name);
+        }
+    }
+
+    return result;
+}
+
 export interface PluginSelections {
     provider: string;
     session: string;
     theme: string;       // default theme name
     mfa: string;         // comma-separated
     extensions: string;  // comma-separated
+    plugin_dir?: string; // external plugin directory
 }
 
 export async function initializePlugins(
@@ -149,25 +215,43 @@ export async function initializePlugins(
     config: PluginConfig
 ): Promise<void> {
     defaultThemeName = selections.theme;
+    externalPluginDir = selections.plugin_dir || '';
+
+    if (externalPluginDir) {
+        if (existsSync(externalPluginDir)) {
+            console.log(`External plugin directory: ${externalPluginDir}`);
+        } else {
+            console.log(`External plugin directory not found: ${externalPluginDir} (skipping)`);
+            externalPluginDir = '';
+        }
+    }
 
     // Load session first (other plugins may depend on cache)
     plugins.session = await loadPlugin<SessionPlugin>('session', selections.session, config);
 
+    // Now that session is loaded, inject services into config for subsequent plugins
+    const { transporter } = await import('../lib/email.ts');
+    const services: PluginServices = {
+        getSession: () => getSession(),
+        transporter,
+    };
+    const configWithServices: PluginConfig = { ...config, services };
+
     // Provider (single active)
-    plugins.provider = await loadPlugin<ProviderPlugin>('provider', selections.provider, config);
+    plugins.provider = await loadPlugin<ProviderPlugin>('provider', selections.provider, configWithServices);
 
     // MFA plugins (multiple active)
     const mfaNames = parseList(selections.mfa);
     for (const name of mfaNames) {
-        const mfa = await loadPlugin<MFAPlugin>('mfa', name, config);
+        const mfa = await loadPlugin<MFAPlugin>('mfa', name, configWithServices);
         plugins.mfa.push(mfa);
     }
 
     // Theme plugins (load all available, default set by config)
-    const availableThemes = await discoverAvailable('theme');
+    const availableThemes = discoverAvailable('theme');
     for (const name of availableThemes) {
         try {
-            const theme = await loadPlugin<ThemePlugin>('theme', name, config);
+            const theme = await loadPlugin<ThemePlugin>('theme', name, configWithServices);
             plugins.theme.push(theme);
         } catch (err: any) {
             // Non-default themes failing to load is a warning, not fatal
@@ -184,7 +268,7 @@ export async function initializePlugins(
     // Extension plugins (multiple active)
     const extensionNames = parseList(selections.extensions);
     for (const name of extensionNames) {
-        const ext = await loadPlugin<ExtensionPlugin>('extension', name, config);
+        const ext = await loadPlugin<ExtensionPlugin>('extension', name, configWithServices);
         plugins.extension.push(ext);
     }
 }

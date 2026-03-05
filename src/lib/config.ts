@@ -25,6 +25,9 @@ export const env = createEnv({
         MFA: z.string().default('otp'),
         EXTENSIONS: z.string().default(''),
 
+        // External plugin directory (prebuilt JS bundles)
+        PLUGIN_DIR: z.string().default('/data/plugins'),
+
         // Debug
         DEBUG_ADAPTER: z.string().default("false")
           .refine((s) => s === "true" || s === "false")
@@ -76,6 +79,7 @@ export interface AppConfig {
     session: string;
     mfa: string;
     extensions: string;
+    plugin_dir: string;
     // Debug
     debug: {
         adapter: boolean;
@@ -118,6 +122,7 @@ export const config: AppConfig = {
     session: env.SESSION,
     mfa: env.MFA,
     extensions: env.EXTENSIONS,
+    plugin_dir: env.PLUGIN_DIR,
 
     debug: {
         adapter: env.DEBUG_ADAPTER,
