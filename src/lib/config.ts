@@ -14,6 +14,7 @@ export const env = createEnv({
         PATREON_CLIENT_ID: z.string().optional(),
         PATREON_CLIENT_SECRET: z.string().optional(),
         HOSTNAME: z.string().nonempty("must not be empty"),
+        SITE_NAME: z.string().default('OIDC Provider'),
         THEME: z.string().default(DEFAULT_THEME),
         MODE: z.string().default('dev'),
         DATABASE_URL: z.string().nonempty("MySQL database URL must not be empty"),
@@ -47,7 +48,8 @@ export const env = createEnv({
 
 const themeSpec = new URL(`../themes/${env.THEME}/theme.ts`, import.meta.url).href;
 const themeModule = await import(themeSpec);
-const themeApi = themeModule.default; // { name, page, signoutSuccess, error }
+const themeApi = themeModule.default; // { name, page, logout, loggedout, error }
+themeApi.site_name = env.SITE_NAME;
 
 interface Token {
     resourceServer?: ResourceServer;
@@ -61,6 +63,7 @@ export interface Config {
     };
     provider_url: string;
     hostname: string;
+    site_name: string;
     theme: string;
     mode: string;
     database_url: string;
@@ -146,6 +149,7 @@ export interface Config {
 export const config: Config = {
     provider_url: `https://${env.HOSTNAME}/`,
     hostname: `${env.HOSTNAME}`,
+    site_name: `${env.SITE_NAME}`,
     theme: `${env.THEME}`,
     mode: env.MODE,
     database_url: env.DATABASE_URL,
