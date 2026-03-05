@@ -70,8 +70,8 @@ export type AdapterConstructor = new (name: string) => OIDCAdapter;
 export interface OIDCAdapter {
     upsert(id: string, payload: any, expiresIn?: number): Promise<void>;
     find(id: string): Promise<any | undefined>;
-    findByUserCode?(userCode: string): Promise<any | undefined>;
-    findByUid?(uid: string): Promise<any | undefined>;
+    findByUserCode(userCode: string): Promise<any | undefined | void>;
+    findByUid(uid: string): Promise<any | undefined | void>;
     consume(id: string): Promise<void>;
     destroy(id: string): Promise<void>;
     revokeByGrantId(grantId: string): Promise<void>;

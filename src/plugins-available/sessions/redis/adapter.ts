@@ -1,4 +1,4 @@
-import Redis from 'ioredis';
+import type { Redis } from 'ioredis';
 import type { OIDCAdapter } from '../../../plugins/session/interface.ts';
 
 const grantable = new Set([
