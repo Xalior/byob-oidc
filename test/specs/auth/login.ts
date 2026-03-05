@@ -1,11 +1,15 @@
 import { browser, expect } from '@wdio/globals'
 import AuthPage from '../../pageobjects/auth.page.ts'
-import { getDb } from "../../../src/plugins-available/providers/simple-sql/db.ts";
+import { initializeDb, getDb } from "../../../src/plugins-available/providers/simple-sql/db.ts";
 import { confirmation_codes, users } from "../../../src/plugins-available/providers/simple-sql/schema.ts";
 import { eq } from "drizzle-orm";
 import { hashAccountPassword } from "../../../src/plugins-available/providers/simple-sql/account.ts";
-import { getSession } from "../../../src/plugins/registry.ts";
+import { createConnection, getConnection } from "../../../src/plugins-available/sessions/redis/connection.ts";
 import { config } from "../../../src/lib/config.ts";
+
+// Initialize DB and Redis for test data access
+initializeDb(config.database_url);
+createConnection(config.cache_url);
 
 const admin_email = 'darran@xalior.com';
 let admin_password = '123123qweqweASDASD';
@@ -45,8 +49,9 @@ describe('Authentication:Login', () => {
         const interaction_id = interaction_matches[1];
         console.log(":interaction_id:", interaction_id);
 
-        const session = getSession();
-        const mfa_pin = await session.get(`${config.hostname}:mfaCode:${interaction_id}`);
+        const cache = getConnection();
+        const raw: any = await cache.call('JSON.GET', `${config.hostname}:mfaCode:${interaction_id}`);
+        const mfa_pin = raw ? JSON.parse(raw) : null;
         console.log(":mfa_pin:", mfa_pin);
 
         expect(mfa_pin !== null && mfa_pin !== undefined).toBeTruthy();

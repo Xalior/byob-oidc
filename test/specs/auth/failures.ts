@@ -1,6 +1,8 @@
 import { expect } from '@wdio/globals'
 import AuthPage from '../../pageobjects/auth.page.ts'
-import { getDb } from "../../../src/plugins-available/providers/simple-sql/db.ts";
+import { initializeDb, getDb } from "../../../src/plugins-available/providers/simple-sql/db.ts";
+import { config } from "../../../src/lib/config.ts";
+initializeDb(config.database_url);
 import { confirmation_codes, users } from "../../../src/plugins-available/providers/simple-sql/schema.ts";
 import { eq } from "drizzle-orm";
 import { hashAccountPassword } from "../../../src/plugins-available/providers/simple-sql/account.ts";

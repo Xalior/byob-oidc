@@ -207,8 +207,14 @@ export const config: Options.Testrunner = {
      * @param {Array.<String>} specs        List of spec file paths that are to be run
      * @param {object}         browser      instance of created browser/device session
      */
-    // before: function (capabilities, specs) {
-    // },
+    before: async function (capabilities, specs) {
+        // Initialize provider DB and Redis for test data setup / MFA code reading
+        const { initializeDb } = await import('./src/plugins-available/providers/simple-sql/db.ts');
+        const { createConnection } = await import('./src/plugins-available/sessions/redis/connection.ts');
+        const { config: appConfig } = await import('./src/lib/config.ts');
+        initializeDb(appConfig.database_url);
+        createConnection(appConfig.cache_url);
+    },
     /**
      * Runs before a WebdriverIO command gets executed.
      * @param {string} commandName hook command name
