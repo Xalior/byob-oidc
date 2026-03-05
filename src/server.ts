@@ -210,8 +210,9 @@ app.get('/callback',
 
     // Executed on successful login
     function(req: Request, res: Response) {
-        // console.log("Callback URL triggered");
-        // console.log(req.user, req.session);
+        // Clear any stale flash messages from prior failed attempts
+        req.flash('error');
+        req.flash('warning');
         res.redirect('/');
     }
 );
