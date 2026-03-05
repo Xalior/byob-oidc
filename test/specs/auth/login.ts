@@ -1,12 +1,15 @@
 import { browser, expect } from '@wdio/globals'
 import AuthPage from '../../pageobjects/auth.page.ts'
-import { db } from "../../../src/db/index.ts";
-import { confirmation_codes, users } from "../../../src/db/schema.ts";
+import { initializeDb, getDb } from "../../../src/plugins-available/providers/simple-sql/db.ts";
+import { confirmation_codes, users } from "../../../src/plugins-available/providers/simple-sql/schema.ts";
 import { eq } from "drizzle-orm";
-import { hashAccountPassword } from "../../../src/models/account.ts";
-import DatabaseAdapter from "../../../src/database_adapter.ts";
+import { hashAccountPassword } from "../../../src/plugins-available/providers/simple-sql/account.ts";
+import { createConnection, getConnection } from "../../../src/plugins-available/sessions/redis/connection.ts";
+import { config } from "../../../src/lib/config.ts";
 
-const mfa_cache = new DatabaseAdapter('MFACode');
+// Initialize DB and Redis for test data access
+initializeDb(config.database_url);
+createConnection(config.cache_url);
 
 const admin_email = 'darran@xalior.com';
 let admin_password = '123123qweqweASDASD';
@@ -14,13 +17,13 @@ const admin_account_id = 1;
 
 describe('Authentication:Login', () => {
     async function init(): Promise<void> {
-        let res = await db.update(users).set({
+        let res = await getDb().update(users).set({
             login_attempts: 0,
             password: await hashAccountPassword(admin_password),
         }).where(eq(users.id, admin_account_id));
         console.log("Reset admin 'account':", res[0]['info']);
 
-        res = await db.delete(confirmation_codes).where(eq(confirmation_codes.user_id, admin_account_id));
+        res = await getDb().delete(confirmation_codes).where(eq(confirmation_codes.user_id, admin_account_id));
         console.log("Reset admin 'confirmation_codes':", res[0]['affectedRows']);
     }
 
@@ -46,10 +49,12 @@ describe('Authentication:Login', () => {
         const interaction_id = interaction_matches[1];
         console.log(":interaction_id:", interaction_id);
 
-        const mfa_pin = await mfa_cache.find(interaction_id);
+        const cache = getConnection();
+        const raw: any = await cache.call('JSON.GET', `${config.hostname}:mfaCode:${interaction_id}`);
+        const mfa_pin = raw ? JSON.parse(raw) : null;
         console.log(":mfa_pin:", mfa_pin);
 
-        expect(mfa_pin !== null).toBeTruthy();
+        expect(mfa_pin !== null && mfa_pin !== undefined).toBeTruthy();
         await AuthPage.confirm_login(mfa_pin.pin);
         await expect(AuthPage.navbar).toHaveText(expect.stringMatching(/logout/i));
     });

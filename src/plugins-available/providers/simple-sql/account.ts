@@ -1,8 +1,7 @@
 import {nanoid} from 'nanoid';
-import { db } from '../db/index.ts';
-import { users } from '../db/schema.ts';
+import { getDb } from './db.ts';
+import { users } from './schema.ts';
 import { and, eq } from 'drizzle-orm';
-import {config} from '../lib/config.ts'
 import bcrypt from 'bcryptjs';
 import { Request } from 'express';
 
@@ -29,11 +28,15 @@ export const generateAccountId = (): string => {
     return nanoid(16)
 }
 
-const PASSWORD_SALT = config.password.salt;
+let _passwordSalt = 11;
+
+export function setPasswordSalt(salt: number): void {
+    _passwordSalt = salt;
+}
 
 export const hashAccountPassword = async (password: string): Promise<string> => {
     try {
-        const salt = await bcrypt.genSalt(PASSWORD_SALT);
+        const salt = await bcrypt.genSalt(_passwordSalt);
         return await bcrypt.hash(password, salt);
     } catch (error) {
         console.log(error);
@@ -62,7 +65,7 @@ export class Account {
      *   or not return them in id tokens but only userinfo and so on.
      */
     async claims(use: string, scope: string): Promise<any> { // eslint-disable-line no-unused-vars
-        const user = (await db.select()
+        const user = (await getDb().select()
             .from(users)
             .where(eq(users.account_id, this.accountId))
             .limit(1))[0];
@@ -80,7 +83,7 @@ export class Account {
         const email = req.body.login;
         const password = req.body.password;
 
-        const user = (await db.select()
+        const user = (await getDb().select()
             .from(users)
             .where(and
                 (
@@ -107,7 +110,7 @@ export class Account {
 
         // Password wrong?
         if (!(await bcrypt.compare(password, user.password))) {
-            await db.update(users).set({
+            await getDb().update(users).set({
                 login_attempts: user.login_attempts+1,
             }).where(eq(users.id, user.id));
 
@@ -118,7 +121,7 @@ export class Account {
 
         // If the user has failed to login before, reset that to zero now
         if(user.login_attempts>0) {
-            await db.update(users).set({
+            await getDb().update(users).set({
                 login_attempts: 0,
             }).where(eq(users.id, user.id));
         }
@@ -135,7 +138,7 @@ export class Account {
         //   it is undefined in scenarios where account claims are returned from authorization endpoint
         // ctx is the http request context
 
-        const user = (await db.select()
+        const user = (await getDb().select()
             .from(users)
             .where(eq(users.account_id, id))
             .limit(1))[0];

@@ -1,0 +1,76 @@
+import { ProviderPlugin, OIDCAccount } from '../../../plugins/provider/interface.ts';
+import { PluginConfig } from '../../../plugins/types.ts';
+import { Account, setPasswordSalt } from './account.ts';
+import { initializeDb } from './db.ts';
+import { initializeEmail } from './email.ts';
+import { Request, Application } from 'express';
+
+import register from './routes/register.ts';
+import confirm from './routes/confirm.ts';
+import reconfirm from './routes/reconfirm.ts';
+import profile from './routes/profile.ts';
+import lost_password from './routes/lost_password.ts';
+import reset_password from './routes/reset_password.ts';
+
+/** Wraps the internal Account class to satisfy OIDCAccount interface */
+function wrapAccount(account: Account): OIDCAccount {
+    return {
+        accountId: account.accountId,
+        async claims(use: string, scope: string) {
+            return account.claims(use, scope);
+        },
+    };
+}
+
+const plugin: ProviderPlugin = {
+    meta: {
+        name: 'simple-sql',
+        version: '1.0.0',
+        type: 'provider',
+        description: 'MySQL/SQL provider with bcrypt auth, email confirmation, and user management',
+    },
+
+    async initialize(config: PluginConfig) {
+        const databaseUrl = process.env.DATABASE_URL;
+        if (!databaseUrl) {
+            throw new Error('Simple SQL provider requires DATABASE_URL environment variable');
+        }
+
+        const passwordSalt = parseInt(process.env.PASSWORD_SALT || '11', 10);
+        setPasswordSalt(passwordSalt);
+
+        initializeDb(databaseUrl);
+        initializeEmail(config);
+
+        console.log(`Simple SQL provider initialized (db: ${databaseUrl.replace(/\/\/.*@/, '//***@')})`);
+    },
+
+    async authenticate(req: Request): Promise<OIDCAccount | null> {
+        const account = await Account.findByLogin(req);
+        if (!account) return null;
+        return wrapAccount(account);
+    },
+
+    async findAccount(ctx: any, id: string, token?: any): Promise<OIDCAccount | null> {
+        const account = await Account.findAccount(ctx, id, token);
+        if (!account) return null;
+        return wrapAccount(account);
+    },
+
+    async getClaims(accountId: string, use: string, scope: string): Promise<Record<string, any>> {
+        const account = await Account.findAccount(null, accountId);
+        if (!account) return { sub: accountId };
+        return account.claims(use, scope);
+    },
+
+    getRoutes(app: Application): void {
+        register(app);
+        confirm(app);
+        reconfirm(app);
+        profile(app);
+        lost_password(app);
+        reset_password(app);
+    },
+};
+
+export default plugin;
