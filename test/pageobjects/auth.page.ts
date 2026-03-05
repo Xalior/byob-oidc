@@ -1,6 +1,8 @@
 import { $, browser } from '@wdio/globals'
 import Page from './page.ts';
-import { getDb } from "../../src/plugins-available/providers/simple-sql/db.ts";
+import { initializeDb, getDb } from "../../src/plugins-available/providers/simple-sql/db.ts";
+import { config } from "../../src/lib/config.ts";
+initializeDb(config.database_url);
 import { confirmation_codes, users } from "../../src/plugins-available/providers/simple-sql/schema.ts";
 import { eq, desc } from "drizzle-orm";
 
