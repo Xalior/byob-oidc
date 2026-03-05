@@ -1,6 +1,6 @@
 import { SessionPlugin } from '../../../plugins/session/interface.ts';
 import { PluginConfig } from '../../../plugins/types.ts';
-import { createAdapter } from './adapter.ts';
+import { createAdapter, setClientFinder as setAdapterClientFinder } from './adapter.ts';
 import type { AdapterConstructor } from '../../../plugins/session/interface.ts';
 
 const store = new Map<string, { value: any; expiresAt: number | null }>();
@@ -62,6 +62,10 @@ const plugin: SessionPlugin = {
 
     isConnected(): boolean {
         return true; // Always connected — it's in-memory
+    },
+
+    setClientFinder(finder: (id: string) => Promise<any>): void {
+        setAdapterClientFinder(finder);
     },
 };
 

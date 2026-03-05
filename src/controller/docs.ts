@@ -1,13 +1,8 @@
-import { users, confirmation_codes } from "../db/schema.ts";
-import { db } from "../db/index.ts";
-import { eq, and, gte } from "drizzle-orm";
 import { Request, Response, NextFunction, Application } from 'express';
 import slugify from "slugify";
 
 const allowedDocs = ['about'];
 export default (app: Application): void => {
-
-
     app.get('/docs/:path',
         function(req: Request, res: Response, next: NextFunction) {
             try{

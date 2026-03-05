@@ -1,6 +1,6 @@
 import { SessionPlugin } from '../../../plugins/session/interface.ts';
 import { PluginConfig } from '../../../plugins/types.ts';
-import { createAdapter } from './adapter.ts';
+import { createAdapter, setClientFinder as setAdapterClientFinder } from './adapter.ts';
 import { getConnection, createConnection, closeConnection } from './connection.ts';
 import type { AdapterConstructor } from '../../../plugins/session/interface.ts';
 
@@ -52,6 +52,10 @@ const plugin: SessionPlugin = {
         } catch {
             return false;
         }
+    },
+
+    setClientFinder(finder: (id: string) => Promise<any>): void {
+        setAdapterClientFinder(finder);
     },
 };
 
