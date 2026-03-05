@@ -1,6 +1,6 @@
 # PLAN: External Plugin Loading (Prebuilt Bundles)
 
-**Status: Not yet implemented**
+**Status: Implemented** (see `feature/external-plugin-loading` branch)
 
 This document describes the planned support for loading plugins from **prebuilt bundles in external directories** -- outside the BYOB-OIDC source tree. This is the target model for third-party and user-contributed plugins.
 
@@ -172,33 +172,32 @@ interface PluginConfig {
 
 ## Implementation Tasks
 
-### Phase 1: Core Changes
+### Phase 1: Core Changes -- DONE
 
-- [ ] Add `PLUGIN_DIR` env var to config (optional, no default)
-- [ ] Update `discoverAvailable()` to scan both built-in and external directories
-- [ ] Update `loadPlugin()` to try `.js` then `.ts` extensions
-- [ ] Handle `file://` URL resolution for external directories
-- [ ] Test loading a prebuilt JS plugin from an external directory
+- [x] Add `PLUGIN_DIR` env var to config (default: `/data/plugins`)
+- [x] Update `discoverAvailable()` to scan both built-in and external directories
+- [x] Update `loadPlugin()` to try `.js` (external) then `.ts` (built-in)
+- [x] Handle `file://` URL resolution for external directories
+- [x] Test loading a prebuilt JS plugin from an external directory
 
-### Phase 2: Developer Experience
+### Phase 2: Developer Experience -- DONE
 
-- [ ] Extract plugin interfaces into a standalone package (`@byob-oidc/plugin-types` or similar)
-- [ ] Add package exports for core utilities (registry, email transporter)
-- [ ] Expand `PluginConfig` to include service accessors for external plugins
-- [ ] Create a plugin development template/scaffold
-- [ ] Write a guide for building and distributing prebuilt plugins
+- [x] Extract plugin interfaces into a standalone package (`@byob-oidc/plugin-types`)
+- [x] Expand `PluginConfig` to include service accessors (`PluginServices`) for external plugins
+- [x] Inject `getSession()` and `transporter` via `config.services`
+- [x] Write a guide for building and distributing prebuilt plugins
 
-### Phase 3: Plugin Packaging
+### Phase 3: Plugin Packaging -- PARTIAL
 
-- [ ] Define `package.json` `byob-oidc` metadata schema
+- [x] Define `package.json` `byob-oidc` metadata schema (in example plugins)
 - [ ] Read plugin metadata from `package.json` when available (supplement `meta`)
 - [ ] Add version compatibility checking (`minCoreVersion`)
-- [ ] Document the plugin bundle format
+- [x] Document the plugin bundle format
 
-### Phase 4: Plugin Distribution
+### Phase 4: Plugin Distribution -- DONE
 
-- [ ] Create an example plugin repository with build pipeline
-- [ ] Document how to build a plugin with esbuild/rollup/webpack
+- [x] Create example plugins with build pipeline (`examples/plugins/`)
+- [x] Document how to build a plugin with esbuild
 - [ ] Consider a plugin registry or directory (long-term, optional)
 
 ## Open Questions
