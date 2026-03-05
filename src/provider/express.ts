@@ -1,4 +1,3 @@
-/* eslint-disable no-console, camelcase, no-unused-vars */
 import { strict as assert } from 'node:assert';
 import * as querystring from 'node:querystring';
 import { inspect } from 'node:util';
@@ -7,15 +6,8 @@ import isEmpty from 'lodash/isEmpty.js';
 import { urlencoded } from 'express';
 import { Request, Response, NextFunction, Application } from 'express';
 
-import DatabaseAdapter from "../database_adapter.ts";
-
-import { Account } from '../models/account.ts';
+import { getProvider, getMFA } from '../plugins/registry.ts';
 import { errors } from 'oidc-provider';
-import { sendLoginPinEmail } from "../lib/email.ts";
-import { check, matchedData } from "express-validator";
-import { db } from "../db/index.ts";
-import { users } from "../db/schema.ts";
-import { eq } from "drizzle-orm";
 
 const body = urlencoded({ extended: false });
 
@@ -37,8 +29,6 @@ const setNoCache = (req: Request, res: Response, next: NextFunction) => {
     next();
 }
 
-const mfaCode = new DatabaseAdapter("MFACode");
-
 interface OIDCProvider {
     interactionDetails: (req: Request, res: Response) => Promise<any>;
     interactionFinished: (req: Request, res: Response, result: any, options: any) => Promise<void>;
@@ -51,7 +41,6 @@ interface OIDCProvider {
 }
 
 export default (app: Application, provider: OIDCProvider): void => {
-
 
     app.get('/interaction/:uid', setNoCache, async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -67,11 +56,9 @@ export default (app: Application, provider: OIDCProvider): void => {
             const missingOIDCScope = new Set(prompt.details.missingOIDCScope || []);
             missingOIDCScope.delete('openid');
             missingOIDCScope.delete('offline_access');
-            const filteredMissingOIDCScope = Array.from(missingOIDCScope);
 
             const missingOIDCClaims = new Set(prompt.details.missingOIDCClaims || []);
             ['sub', 'sid', 'auth_time', 'acr', 'amr', 'iss'].forEach((claim) => missingOIDCClaims.delete(claim));
-            const filteredMissingOIDCClaims = Array.from(missingOIDCClaims);
 
             const missingResourceScopes = prompt.details.missingResourceScopes || {};
             const eachMissingResourceScope = Object.entries(missingResourceScopes).map(([indicator, scopes]) => ({
@@ -98,10 +85,8 @@ export default (app: Application, provider: OIDCProvider): void => {
                     });
                 }
 
-                // We are a "closed circuit" network, with locked down clients and providers - so consent is implied - we should never end up here...
                 case 'consent': {
-                    // 'throw'ing will generate a log, and give a 500 error - best we can do in this circumstance
-                    throw(new Error(`Unexpected consent request (filteredMissingOIDCScope:${filteredMissingOIDCScope} eachMissingResourceScope:${eachMissingResourceScope} filteredMissingOIDCClaims:${filteredMissingOIDCClaims})`));
+                    throw(new Error(`Unexpected consent request`));
                 }
 
                 default:
@@ -115,111 +100,87 @@ export default (app: Application, provider: OIDCProvider): void => {
     app.post('/interaction/:uid/login', setNoCache, body, async (req: Request, res: Response, next: NextFunction) => {
         try {
             const details = await provider.interactionDetails(req, res);
-
             assert.equal(details.prompt['name'], 'login');
 
-            const account = await Account.findByLogin(req);
+            const providerPlugin = getProvider();
 
-            if(!account) {
+            // For external auth providers, redirect to external login
+            if (providerPlugin.externalAuth && providerPlugin.getExternalLoginUrl) {
+                const returnUrl = `${req.protocol}://${req.get('host')}/interaction/${req.params.uid}/callback`;
+                const loginUrl = await providerPlugin.getExternalLoginUrl(returnUrl);
+                return res.redirect(loginUrl);
+            }
+
+            const account = await providerPlugin.authenticate(req);
+
+            if (!account) {
                 return res.redirect(`/interaction/${details.jti}`);
             }
 
             // Store remember_me preference in session
             if (req.body.remember_me) {
                 req.session.remember_me = true;
-                // Set a longer cookie expiration when "remember me" is checked
                 req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
             }
 
-            const mfa_pin = ('000000'+Math.floor(Math.random() * 1000000)).slice(-6);
-            const request_time = new Date().toJSON();
-            await mfaCode.upsert(req.params.uid, {
-                pin: mfa_pin,
-                accountId: account.accountId,
-                requestTime: request_time
-            },15*60);
+            // Delegate to MFA plugin
+            // For now, use the first loaded MFA plugin. Future: let user choose.
+            const mfa = getMFA();
+            const needsChallenge = await mfa.requiresChallenge(account);
 
-            await sendLoginPinEmail(req, req.body.login, mfa_pin, request_time);
+            if (needsChallenge) {
+                // Store accountId in session so /mfa route can finish the interaction
+                (req.session as any).__mfa_accountId = account.accountId;
 
-            return res.render('mfa', {
-                'uid': req.params.uid,
-            });
+                const challengeId = await mfa.issueChallenge(account, req);
+                return res.render('mfa', {
+                    uid: req.params.uid,
+                    challengeId,
+                });
+            }
+
+            // No MFA needed — finish interaction
+            const result = {
+                login: { accountId: account.accountId },
+            };
+            await provider.interactionFinished(req, res, result, { mergeWithLastSubmission: false });
 
         } catch (err) {
             next(err);
         }
     });
 
-    app.post('/interaction/:uid/mfa', setNoCache, body,
-        // Validation
-        check('mfa').trim().notEmpty().isNumeric().isLength({
-            min: 6,
-            max: 6,
-        }).withMessage('Invalid MFA PIN.'),
-
-        // Actual Page Handler
-        async (req: Request, res: Response, next: NextFunction) => {
+    app.post('/interaction/:uid/mfa', setNoCache, body, async (req: Request, res: Response, next: NextFunction) => {
         try {
             const details = await provider.interactionDetails(req, res);
-
             assert.equal(details.prompt['name'], 'login');
 
-            const mfa_form = matchedData(req, { includeOptionals: true });
+            // Use the first MFA plugin (same as login route)
+            const mfa = getMFA();
+            const challengeId = req.params.uid;
 
-            const mfa_code = await mfaCode.find(req.params.uid);
+            const verified = await mfa.verifyChallenge(challengeId, req);
 
-            if(!mfa_code) {
-                req.flash('error', 'Unexpected MFA Pin lookup request!');
-
-                return res.redirect(`/interaction/${details.jti}`);
-            }
-
-            const account = await Account.findAccount(null, mfa_code?.accountId);
-
-            if(!account) {
-                req.flash('error', 'Unexpected account request!');
-
-                return res.redirect(`/interaction/${details.jti}`);
-            }
-
-            console.log("Form, MFA & Account: ", mfa_form, mfa_code, account);
-
-            // User Locked
-            if(account.profile.user.login_attempts>2) {
-                req.flash('error', 'Account Locked.<br> <a href="/lost_password">Reset your password</a> to continue.');
-
-                return res.redirect(`/interaction/${details.jti}`);
-            }
-
-            if(mfa_form.mfa !== mfa_code.pin) {
-                await db.update(users).set({
-                    login_attempts: account.profile.user.login_attempts+1,
-                }).where(eq(users.id, account.profile.user.id));
-
-                req.flash('error', 'Invalid Passcode!');
-
+            if (!verified) {
                 return res.render('mfa', {
-                    'uid': req.params.uid,
+                    uid: req.params.uid,
                 });
-
             }
 
-            mfaCode.destroy(account.accountId);
+            // accountId was stored in express session during /login before MFA handoff
+            const accountId = req.session && (req.session as any).__mfa_accountId;
+
+            if (!accountId) {
+                req.flash('error', 'Session expired. Please log in again.');
+                return res.redirect(`/interaction/${details.jti}`);
+            }
+
+            delete (req.session as any).__mfa_accountId;
 
             const result = {
-                login: {
-                    accountId: account.accountId,
-                },
+                login: { accountId },
             };
 
-            // Successful login == reset login_attempts
-            if(account.profile.user.login_attempts>0) {
-                await db.update(users).set({
-                    login_attempts: account.profile.user.login_attempts + 1,
-                }).where(eq(users.id, account.profile.user.id));
-            }
-
-            console.log("MFA Complete: ", req.session);
             await provider.interactionFinished(req, res, result, { mergeWithLastSubmission: false });
         } catch (err) {
             next(err);
@@ -232,9 +193,7 @@ export default (app: Application, provider: OIDCProvider): void => {
                 error: 'access_denied',
                 error_description: 'End-User aborted interaction',
             };
-
             await provider.interactionFinished(req, res, result, { mergeWithLastSubmission: false });
-
         } catch (err) {
             next(err);
         }
