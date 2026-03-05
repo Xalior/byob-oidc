@@ -1,0 +1,12 @@
+[
+    { "question": "What is 2 + 3?", "answer": "5" },
+    { "question": "What color is the sky?", "answer": "blue" },
+    { "question": "How many legs does a dog have?", "answer": "4" },
+    { "question": "What is the capital of France?", "answer": "paris" },
+    { "question": "What season comes after winter?", "answer": "spring" },
+    { "question": "How many sides does a square have?", "answer": "4" },
+    { "question": "What is 10 minus 7?", "answer": "3" },
+    { "question": "What do bees make?", "answer": "honey" },
+    { "question": "What is the largest ocean?", "answer": "pacific" },
+    { "question": "What is frozen water called?", "answer": "ice" }
+]
