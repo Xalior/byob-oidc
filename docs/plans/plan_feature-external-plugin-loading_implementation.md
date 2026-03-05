@@ -22,6 +22,7 @@ Enable users to create, build, and load their own plugins from an external `/dat
 - [x] Docker: Update docker.md documentation
 - [x] Docs: Update external plugin development guide
 - [x] Test: Build example plugins and validate loading
+- [x] Test: Fix e2e test flakiness (Safari form POST race condition)
 
 ## Progress Log
 
@@ -43,6 +44,11 @@ Enable users to create, build, and load their own plugins from an external `/dat
 ### 2026-03-05T00:04
 - Docker and docs updated. All plugin docs expanded for external workflow.
 - Tests passing: all 3 test cases (URL import, CSV provider, captcha MFA).
+
+### 2026-03-05T00:05
+- Fixed pre-existing e2e test flakiness: Safari WebDriver race condition after form POST.
+- Added `document.readyState` waits after every form submit in page objects.
+- All 20 e2e tests pass reliably now.
 
 ## Decisions & Notes
 
@@ -69,3 +75,4 @@ fca318e - test: add external plugin loading validation tests
 e385927 - docs: mark WIP tracker as complete
 51a45b3 - fix: resolve all TypeScript type errors
 656a58e - fix: resolve Redis connection null-type narrowing error
+b2b08e9 - fix: add page-load waits after form submissions in e2e tests
