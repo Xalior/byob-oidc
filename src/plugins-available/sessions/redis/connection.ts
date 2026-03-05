@@ -5,8 +5,9 @@ let cache: RedisType | null = null;
 
 export function createConnection(url: string): RedisType {
     // @ts-ignore -- ioredis constructor typing is wrong for URL strings
-    cache = new Redis(url);
-    return cache;
+    const conn: RedisType = new Redis(url);
+    cache = conn;
+    return conn;
 }
 
 export function getConnection(): RedisType {
