@@ -1,12 +1,12 @@
 import { check, validationResult, matchedData } from 'express-validator';
-import { users, confirmation_codes } from '../db/schema.js';
-import { db } from "../db/index.js";
+import { users, confirmation_codes } from '../schema.ts';
+import { getDb } from "../db.ts";
 import { eq, sql } from "drizzle-orm";
-import { sendConfirmationEmail} from "../lib/email.js";
+import { sendConfirmationEmail} from "../email.ts";
 import {nanoid} from "nanoid";
-import {generateAccountId, hashAccountPassword} from "../models/account.ts";
+import {generateAccountId, hashAccountPassword} from "../account.ts";
 import { Request, Response, NextFunction, Application } from 'express';
-import {config} from '../lib/config.ts'
+import {config} from '../../../../lib/config.ts'
 import {FieldValidationError} from "express-validator/lib/base.js";
 
 export default (app: Application): void => {
@@ -30,7 +30,7 @@ export default (app: Application): void => {
             async (value: string, meta) => {
                 const req = meta.req;
                 try {
-                    const existing_user = (await db.select()
+                    const existing_user = (await getDb().select()
                         .from(users)
                         .where(eq(users.email, value))
                         .limit(1))[0];
@@ -106,19 +106,19 @@ export default (app: Application): void => {
 
                 const reg_form = matchedData(req, { includeOptionals: true });
 
-                const new_user_id = (await db.insert(users).values({
+                const new_user_id = (await getDb().insert(users).values({
                     email: reg_form.email,
                     account_id: generateAccountId(),
                     password: await hashAccountPassword(reg_form.password_1),
                     display_name: reg_form.display_name,
                 }).$returningId())[0].id;
 
-                const confirmation_code_id = (await db.insert(confirmation_codes).values({
+                const confirmation_code_id = (await getDb().insert(confirmation_codes).values({
                     user_id: new_user_id,
                     confirmation_code: nanoid(52)
                 }).$returningId())[0].id;
 
-                const confirmation_code = (await db.select()
+                const confirmation_code = (await getDb().select()
                     .from(confirmation_codes)
                     .where(eq(confirmation_codes.id, confirmation_code_id))
                     .limit(1))[0];
