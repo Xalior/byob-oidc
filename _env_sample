@@ -1,51 +1,92 @@
-# General settings
+# =============================================================================
+# BYOB-OIDC Configuration
+# =============================================================================
+# Copy this file to .env and edit to match your environment.
+
+# -----------------------------------------------------------------------------
+# Core Settings
+# -----------------------------------------------------------------------------
 HOSTNAME=id.example.com
 SITE_NAME=My OIDC Provider
-THEME=nbn24
 NODE_ENV=production
+PORT=5000
 
-# Patreon settings
-PATREON_CLIENT_ID=
-PATREON_CLIENT_SECRET=
+# Session encryption secret
+SESSION_SECRET=your-secure-session-secret
 
-# Database and cache settings
-DATABASE_URL=mysql://user:pass@host:3306/dbname
-CACHE_URL=redis://host:6379/
+# Cookie encryption keys (comma-separated, rotate by adding new keys at the start)
+COOKIE_KEYS=some secret key,and also the old rotated away some time ago,and one more
 
-# Client features
-CLIENT_FEATURES_REGISTRATION=true
+# -----------------------------------------------------------------------------
+# Plugin Selection
+# -----------------------------------------------------------------------------
+# Provider: where users come from (single active)
+# Available: simple-sql
+PROVIDER=simple-sql
 
-# SMTP settings
+# Session: runtime persistence (single active)
+# Available: redis, lru
+SESSION=redis
+
+# Theme: UI appearance (sets default; all available themes are loaded)
+# Available: nbn24, robotic, xalior
+THEME=nbn24
+
+# MFA: multi-factor authentication (comma-separated, multiple active)
+# Available: otp, none
+MFA=otp
+
+# Extensions: optional features (comma-separated, multiple active)
+# Available: (none built-in yet)
+EXTENSIONS=
+
+# -----------------------------------------------------------------------------
+# OIDC Client (Self-Discovery)
+# -----------------------------------------------------------------------------
+# These must match a record in the clients database table
+CLIENT_ID=OWN_CLIENT_ID
+CLIENT_SECRET=OWN_CLIENT_SECRET
+
+# -----------------------------------------------------------------------------
+# SMTP (Core Service — used by MFA and provider plugins)
+# -----------------------------------------------------------------------------
 SMTP_HOST=smtp.relay.com
 SMTP_PORT=25
 SMTP_SECURE=false
 SMTP_USER=
 SMTP_PASS=
 
-# Password settings
+# -----------------------------------------------------------------------------
+# Provider: simple-sql
+# -----------------------------------------------------------------------------
+DATABASE_URL=mysql://user:pass@host:3306/dbname
 PASSWORD_SALT=11
+CLIENT_FEATURES_REGISTRATION=true
 
-# Cookie keys
-COOKIE_KEYS=some secret key,and also the old rotated away some time ago,and one more
+# -----------------------------------------------------------------------------
+# Session: redis
+# -----------------------------------------------------------------------------
+CACHE_URL=redis://host:6379/
 
-# Feature flags
+# -----------------------------------------------------------------------------
+# Optional Integrations
+# -----------------------------------------------------------------------------
+PATREON_CLIENT_ID=
+PATREON_CLIENT_SECRET=
+
+# -----------------------------------------------------------------------------
+# Feature Flags
+# -----------------------------------------------------------------------------
 FEATURE_CLIENT_CREDENTIALS_ENABLED=true
 FEATURE_INTROSPECTION_ENABLED=true
 FEATURE_DEV_INTERACTIONS_ENABLED=false
 
-# Session settings
-SESSION_SECRET=cookie-key
-
-# Client settings -- these must match what is in the SQL DB
-CLIENT_ID=OWN_CLIENT_ID
-CLIENT_SECRET=OPEN_CLIENT_SECRET
-
-# Claims
+# Claims (comma-separated fields for email scope)
 CLAIMS_EMAIL=email,verified,suspended,display_name
 
-# Logging
+# -----------------------------------------------------------------------------
+# Debug / Logging
+# -----------------------------------------------------------------------------
 VERBOSE=true
-# Debug settings
-DEBUG_ADAPTER=true
-DEBUG_ACCOUNT=true
-
+DEBUG_ADAPTER=false
+DEBUG_ACCOUNT=false

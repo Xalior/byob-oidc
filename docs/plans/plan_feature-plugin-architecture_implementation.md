@@ -29,7 +29,7 @@ Full migration plan in [MIGRATION_PLAN.md](/MIGRATION_PLAN.md). Five plugin type
 - [x] Cleanup: Remove dead imports from docs.ts
 - [x] Update tests for new plugin structure
 - [x] Update webpack config for new theme paths
-- [ ] Update Docker/deployment for new env vars (future — no Docker changes needed yet)
+- [x] Update all documentation (README, changelog, _env_sample, docker docs)
 
 ## Progress Log
 
@@ -67,6 +67,12 @@ None currently.
 - Webpack config updated for new theme paths
 - Final sweep: no stale imports remaining
 - All implementation steps complete
+
+### 2026-03-05 (session 2 — docs update)
+- Updated README.md: rewritten for plugin architecture, new env var tables, boot sequence, architecture notes
+- Updated _env_sample: organized by section, added PROVIDER/SESSION/MFA/EXTENSIONS variables
+- Updated docs/docker.md: renamed to BYOB-OIDC, added plugin env vars to examples
+- Updated docs/changelog.md: added v0.4.0 release notes covering full plugin migration
 
 ## Commits
 6d78c7c - docs: add plugin architecture migration plan
