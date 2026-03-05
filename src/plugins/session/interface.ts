@@ -27,6 +27,12 @@ export interface SessionPlugin extends Plugin {
 
     /** Whether the backing store is connected and healthy */
     isConnected(): boolean;
+
+    /**
+     * Register a function the adapter uses to look up OIDC clients by client_id.
+     * Called once at boot by server.ts after the Client model is available.
+     */
+    setClientFinder(finder: (id: string) => Promise<any>): void;
 }
 
 /** Matches oidc-provider's expected adapter factory */

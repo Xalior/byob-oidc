@@ -26,7 +26,7 @@ const plugins: LoadedPlugins = {
 const REQUIRED_METHODS: Record<PluginType, string[]> = {
     theme: ['page', 'logout', 'loggedout', 'error', 'layoutsDir', 'assetsDir'],
     provider: ['authenticate', 'findAccount', 'getClaims'],
-    session: ['getAdapterConstructor', 'set', 'get', 'del', 'isConnected'],
+    session: ['getAdapterConstructor', 'set', 'get', 'del', 'isConnected', 'setClientFinder'],
     mfa: ['requiresChallenge', 'issueChallenge', 'verifyChallenge'],
     extension: [], // extensions have no required methods — all are optional hooks
 };
