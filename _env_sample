@@ -1,5 +1,7 @@
 # General settings
-HOSTNAME=id.nextbestnetwork.com
+HOSTNAME=id.example.com
+SITE_NAME=My OIDC Provider
+THEME=nbn24
 NODE_ENV=production
 
 # Patreon settings
