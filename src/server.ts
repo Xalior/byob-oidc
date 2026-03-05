@@ -77,6 +77,7 @@ try {
         theme: config.theme,
         mfa: config.mfa,
         extensions: config.extensions,
+        plugin_dir: config.plugin_dir,
     }, pluginConfig);
 
     // ── 2. Wire client finder into session adapter ─────────────────────
