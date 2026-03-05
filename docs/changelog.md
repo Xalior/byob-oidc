@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+## Release v0.3.1
+
+### Bug Fixes
+- Fix stale flash messages persisting after successful login — flash errors from prior failed attempts (bad CSRF, wrong password, etc.) are now cleared on successful callback
+
 ## Release v0.3.0
 
 ### Breaking Changes
