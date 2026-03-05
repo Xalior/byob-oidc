@@ -2,7 +2,19 @@
 
 ## Overview
 
-Transform the current fixed-shape OIDC server into a generic, plugin-based system with three plugin types: **Theme**, **Provider**, and **Session**. The plugin architecture is built from scratch -- the current themes are just loose files with no contracts, lifecycle, or registration; they are not a plugin system.
+Transform the current fixed-shape OIDC server into a generic, plugin-based system with five plugin types: **Theme**, **Provider**, **Session**, **MFA**, and **Extension**.
+
+**Plugin loading model:**
+
+- **Provider** — single active. Selects where users come from. `PROVIDER=simple-sql`
+- **Session** — single active. Selects how runtime persistence works. `SESSION=redis`
+- **Theme** — multiple loaded. Config sets default (`THEME=nbn24`). We ship several; user-contributed themes can be loaded too (must comply with spec, not our problem to test). A future extension could let logged-in users override the default with their own preference.
+- **MFA** — multiple enabled simultaneously (`MFA=otp,none`). Users choose which one to use.
+- **Extension** — multiple active simultaneously (`EXTENSIONS=discord,patreon`). Add optional features: account linking, custom routes/UI, gamification, etc.
+
+User-contributed plugins (any type) are a future goal — the architecture should not prevent this.
+
+The plugin architecture is built from scratch -- the current themes are just loose files with no contracts, lifecycle, or registration; they are not a plugin system.
 
 ---
 
@@ -64,6 +76,8 @@ src/
       interface.ts       # SessionPlugin interface
     mfa/
       interface.ts       # MFAPlugin interface
+    extension/
+      interface.ts       # ExtensionPlugin interface
   plugins-available/
     themes/
       nbn24/             # (move from src/themes/nbn24)
@@ -77,6 +91,8 @@ src/
     mfa/
       otp/               # (extract from current MFA flow: email one-time password)
       none/              # (pass-through, always succeeds)
+    extensions/
+      # (future: discord/, patreon/, etc.)
 ```
 
 ---
@@ -89,7 +105,7 @@ Every plugin type shares a common base: identity, lifecycle, and config access.
 
 ```typescript
 // src/plugins/types.ts
-export type PluginType = 'theme' | 'provider' | 'session' | 'mfa';
+export type PluginType = 'theme' | 'provider' | 'session' | 'mfa' | 'extension';
 
 export interface PluginMeta {
   name: string;
@@ -121,12 +137,17 @@ Responsibilities:
 - **Discovery**: scan `src/plugins-available/{type}s/{name}/` for plugin directories
 - **Loading**: dynamic `import()` of each plugin's `index.ts` default export
 - **Validation**: assert the loaded module satisfies the required interface for its type (check required methods/properties exist, throw clear errors on mismatch)
-- **Singleton storage**: one active plugin per type at a time
-- **Accessors**: `getTheme(): ThemePlugin`, `getProvider(): ProviderPlugin`, `getSession(): SessionPlugin`, `getMFA(): MFAPlugin`
+- **Storage**: single active for provider/session; array of loaded instances for theme/mfa/extension
+- **Accessors**: `getTheme(name?): ThemePlugin` (default or by name), `getProvider(): ProviderPlugin`, `getSession(): SessionPlugin`, `getMFA(name?): MFAPlugin` (specific or list), `getMFAs(): MFAPlugin[]`, `getThemes(): ThemePlugin[]`, `getExtensions(): ExtensionPlugin[]`
 - **Lifecycle**: call `initialize()` on load, `shutdown()` on process exit
 - **Error reporting**: clear messages when a plugin is missing, fails validation, or throws during init
 
-Selection via env vars: `THEME=nbn24`, `PROVIDER=simple-sql`, `SESSION=redis`, `MFA=otp`
+Selection via env vars:
+- `PROVIDER=simple-sql` (single)
+- `SESSION=redis` (single)
+- `THEME=nbn24` (default theme; all available themes are loaded)
+- `MFA=otp,none` (comma-separated list of enabled MFA plugins)
+- `EXTENSIONS=` (comma-separated list of enabled extensions, empty by default)
 
 ### 1.3 Theme Plugin Interface
 
@@ -288,6 +309,39 @@ export interface MFAPlugin extends Plugin {
   // req.body contains the user's input (e.g. { mfa: "123456" }).
   // Returns true if verified, false if not (plugin sets flash errors on req).
   verifyChallenge(challengeId: string, req: Request): Promise<boolean>;
+}
+```
+
+### 1.7 Extension Plugin Interface (new)
+
+Extensions add optional features to the OIDC server. Unlike the other four types (where
+one or a few are active), extensions are purely additive — any number can be active
+simultaneously. They can register routes, add middleware, link external accounts, or
+provide entirely new functionality.
+
+**Examples:**
+- Discord account linking (link a Discord account to your OIDC identity)
+- Patreon rewards (check Patreon membership, expose claims/scopes)
+- Custom games/apps (login to play today's game)
+- User theme picker (let logged-in users override the default theme)
+
+```typescript
+// src/plugins/extension/interface.ts
+export interface ExtensionPlugin extends Plugin {
+  meta: PluginMeta & { type: 'extension' };
+
+  // Register routes on the Express app (required — if an extension has no routes, it's middleware)
+  getRoutes?(app: Application): void;
+
+  // Optional: add Express middleware (runs before routes)
+  getMiddleware?(app: Application): void;
+
+  // Optional: expose additional OIDC claims/scopes this extension provides
+  // e.g. a Patreon plugin might add a "patreon:tier" claim
+  getClaims?(accountId: string): Promise<Record<string, any>>;
+
+  // Optional: expose additional OIDC scopes this extension makes available
+  getScopes?(): string[];
 }
 ```
 
@@ -488,31 +542,56 @@ app.use('/theme', express.static(theme.assetsDir()));
 ### New boot order:
 
 ```
-1.  Load core config (HOSTNAME, SITE_NAME, MODE, THEME, PROVIDER, SESSION, MFA, etc.)
+1.  Load app config (config.ts — Zod env validation, plugin selectors, SMTP, debug)
 2.  Initialize plugin registry
-3.  Load session plugin (SESSION env var)
-4.  Load provider plugin (PROVIDER env var)
-5.  Load MFA plugin (MFA env var)
-6.  Load theme plugin (THEME env var)
-7.  Create Express app
-8.  Configure core middleware (morgan, helmet, cors, csrf, flash, passport)
-9.  Configure express-session with session plugin's store
-10. Configure template engine with theme plugin's layouts
-11. Serve theme static assets
-12. Register core routes (home, docs)
-13. Register provider routes (provider.getRoutes()) -- registration, profile, etc. if applicable
-14. Set config.findAccount = provider.findAccount
-15. Create oidc-provider with session plugin's adapter
-16. Register interaction routes (delegates auth to provider, challenge to MFA plugin)
-17. Mount oidc-provider callback
-18. Start server
-19. Self-discovery loop
-20. Passport strategy setup
+3.  Load session plugin (SESSION env var — single active)
+4.  Load provider plugin (PROVIDER env var — single active)
+5.  Load MFA plugins (MFA env var — comma-separated, multiple active)
+6.  Load theme plugins (all available themes; THEME env var sets default)
+7.  Load extension plugins (EXTENSIONS env var — comma-separated, multiple active)
+8.  Build OIDC config (oidc-config.ts — takes app config, returns oidc-provider config)
+9.  Create Express app
+10. Configure core middleware (morgan, helmet, cors, csrf, flash, passport)
+11. Configure express-session with session plugin's store
+12. Configure template engine with default theme's layouts
+13. Serve default theme static assets
+14. Register core routes (home, docs)
+15. Register provider routes (provider.getRoutes())
+16. Register extension routes (each extension.getRoutes())
+17. Set findAccount on OIDC config from provider plugin
+18. Create oidc-provider with session plugin's adapter + OIDC config
+19. Register interaction routes (delegates auth to provider, challenge to MFA)
+20. Mount oidc-provider callback
+21. Start server
+22. Self-discovery loop
+23. Passport strategy setup
 ```
 
 ---
 
-## Phase 7: Config Cleanup
+## Phase 7: Config Cleanup & Split
+
+### Split config.ts into app config vs OIDC config
+
+Currently `src/lib/config.ts` is a single 300-line file that mixes environment variable
+validation with oidc-provider-specific configuration (TTLs, claims, features, jwks,
+cookies, interaction URLs, renderError, loadExistingGrant, issueRefreshToken). This
+makes it extremely brittle — tightly coupled to oidc-provider's API surface, hard to
+read, and fragile if oidc-provider ever changes its config shape.
+
+**Split into:**
+
+- **`src/lib/config.ts`** — App config only. Zod env validation, plugin selectors,
+  SMTP, debug flags. Exports a clean `AppConfig` object with no oidc-provider types.
+  This is what gets passed to plugins as `PluginConfig`.
+
+- **`src/lib/oidc-config.ts`** — OIDC provider configuration. A function
+  `buildOIDCConfig(appConfig)` that returns the oidc-provider-specific config object
+  (TTLs, claims, features, jwks, cookies, etc.). Only imported by `server.ts` at boot
+  time. This isolates the oidc-provider dependency to one file.
+
+This means plugins never see oidc-provider types. If oidc-provider changes its config
+shape, only `oidc-config.ts` needs updating.
 
 ### Migrate loose `process.env` reads into Zod config:
 Currently `SESSION_SECRET`, `CLIENT_ID`, `CLIENT_SECRET`, and `PORT` are read directly from `process.env` in `server.ts` with inline defaults. Move these into the Zod schema in `config.ts` for validation and single source of truth.
@@ -540,7 +619,7 @@ Currently `SESSION_SECRET`, `CLIENT_ID`, `CLIENT_SECRET`, and `PORT` are read di
 
 ## Execution Order (Implementation Steps)
 
-1. **Build plugin infrastructure from scratch** -- `src/plugins/types.ts`, interface files for all four types (theme, provider, session, mfa), `src/plugins/registry.ts` with discovery/loading/validation/lifecycle
+1. **Build plugin infrastructure from scratch** -- `src/plugins/types.ts`, interface files for all five types (theme, provider, session, mfa, extension), `src/plugins/registry.ts` with discovery/loading/validation/lifecycle. Registry supports single-active (provider, session) and multi-active (theme, mfa, extension) plugin types.
 2. **Create `src/plugins-available/` directory structure**
 3. **Wrap existing themes as proper plugins** -- move `src/themes/*` to `src/plugins-available/themes/*`, add `index.ts` wrappers implementing `ThemePlugin`, update config/server to load via registry
 4. **Extract Redis session plugin** -- move `database_adapter.ts` into `src/plugins-available/sessions/redis/`, add express-session store, update server boot
@@ -549,11 +628,12 @@ Currently `SESSION_SECRET`, `CLIENT_ID`, `CLIENT_SECRET`, and `PORT` are read di
 7. **Create "none" MFA plugin** -- pass-through, `requiresChallenge()` always returns false
 8. **Extract Simple SQL provider plugin** -- move account model, controllers, schema, provider-specific email into `src/plugins-available/providers/simple-sql/`
 9. **Refactor interaction routes** -- `src/provider/express.ts` delegates auth to provider plugin, challenge to MFA plugin
-10. **Refactor server.ts** -- new boot sequence: registry loads all four plugins, wires them into Express + oidc-provider
-11. **Refactor config.ts** -- remove plugin-specific env vars, add `PROVIDER`/`SESSION`/`MFA` selectors, plugins read their own env vars
-12. **Update tests** -- adapt to new plugin structure
-13. **Update webpack config** -- new theme asset paths under `plugins-available/themes/`
-14. **Update Docker/deployment** -- new env vars, migration paths
+10. **Split config.ts** -- separate app config (`config.ts`) from OIDC-provider config (`oidc-config.ts`). App config has Zod env validation and plugin selectors. OIDC config is a builder function called only by server.ts.
+11. **Refactor server.ts** -- new boot sequence: registry loads all five plugin types, wires them into Express + oidc-provider using the split config
+12. **Add extension plugin infrastructure** -- interface, registry support, `EXTENSIONS` env var. No concrete extensions yet (future: discord, patreon, etc.) but the plumbing is in place.
+13. **Update tests** -- adapt to new plugin structure
+14. **Update webpack config** -- new theme asset paths under `plugins-available/themes/`
+15. **Update Docker/deployment** -- new env vars, migration paths
 
 ---
 
