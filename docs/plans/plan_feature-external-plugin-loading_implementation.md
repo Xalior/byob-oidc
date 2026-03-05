@@ -66,3 +66,6 @@ None.
 d683d6c - docs: update Dockerfile and docker.md for external plugin directory
 5166f66 - docs: update plugin docs for external plugin loading
 fca318e - test: add external plugin loading validation tests
+e385927 - docs: mark WIP tracker as complete
+51a45b3 - fix: resolve all TypeScript type errors
+656a58e - fix: resolve Redis connection null-type narrowing error
