@@ -12,14 +12,14 @@ export const sendConfirmationEmail = async (email: string, confirmation_code: st
 
   // send mail with defined transport object
   const info = await transporter.sendMail({
-    from: '"NBN:ID" <noreply@nextbestnetwork.com>', // sender address
+    from: `"${config.site_name}" <noreply@${config.hostname}>`, // sender address
     to: email, // list of receivers
-    subject: "✔ NBN:ID Account Confirmation", // Subject line
-    text: `NBN:ID Account Confirmation Email
+    subject: `✔ ${config.site_name} Account Confirmation`, // Subject line
+    text: `${config.site_name} Account Confirmation Email
 
     Please visit ${confirmationUrl} to confirm your account`, // plain text body
 
-    html: `<b>NBN:ID Account Confirmation Email</b><br>
+    html: `<b>${config.site_name} Account Confirmation Email</b><br>
   <br>
   Please visit <a href="${confirmationUrl}">
     ${confirmationUrl}</a> to confirm your account`,
@@ -40,12 +40,12 @@ export const sendLoginPinEmail = async (req: Request | string, email: string, pi
 
   // send mail with defined transport object
   const info = await transporter.sendMail({
-    from: '"NBN:ID" <noreply@nextbestnetwork.com>', // sender address
+    from: `"${config.site_name}" <noreply@${config.hostname}>`, // sender address
     to: email, // list of receivers
-    subject: "🔒 NBN:ID Login PIN", // Subject line
-    text: `NBN:ID Login PIN
+    subject: `🔒 ${config.site_name} Login PIN`, // Subject line
+    text: `${config.site_name} Login PIN
 
-    You attempted to log into NBN:ID - and that required this time sensitive passcode.
+    You attempted to log into ${config.site_name} - and that required this time sensitive passcode.
 
     Your one use passcode is: ${pin_code}
 
@@ -55,9 +55,9 @@ export const sendLoginPinEmail = async (req: Request | string, email: string, pi
     Please visit ${resetPasswordUrl} to reset your password.
 
     This login attempt came from ${clientInfo} at ${request_time}.`, // plain text body
-    html: `<b>NBN:ID Login PIN</b><br>
+    html: `<b>${config.site_name} Login PIN</b><br>
   <br>
-    You attempted to log into NBN:ID - and that required this time sensitive passcode.
+    You attempted to log into ${config.site_name} - and that required this time sensitive passcode.
   <br>
   <h2>Your one use passcode is: ${pin_code}</h2>
   <br>
@@ -80,16 +80,16 @@ export const sendPasswordResetEmail = async (email: string, confirmation_code: s
 
   // send mail with defined transport object
   const info = await transporter.sendMail({
-    from: '"NBN:ID" <noreply@nextbestnetwork.com>', // sender address
+    from: `"${config.site_name}" <noreply@${config.hostname}>`, // sender address
     to: email, // list of receivers
-    subject: "✔ NBN:ID Password Reset", // Subject line
-    text: `NBN:ID Password Reset Email
+    subject: `✔ ${config.site_name} Password Reset`, // Subject line
+    text: `${config.site_name} Password Reset Email
 
     Please visit ${resetPasswordUrl} to reset your password.
 
     If you did not request a password reset, please ignore this email or contact support if you have concerns.`, // plain text body
 
-    html: `<b>NBN:ID Password Reset Email</b><br>
+    html: `<b>${config.site_name} Password Reset Email</b><br>
   <br>
   Please visit <a href="${resetPasswordUrl}">
     ${resetPasswordUrl}</a> to reset your password.

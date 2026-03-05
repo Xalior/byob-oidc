@@ -129,7 +129,9 @@ For production deployment, you should configure the following environment variab
 ```bash
 # General configuration
 NODE_ENV=production                  # Set to 'production' for production environment
-SLUG=id.nextbestnetwork.com          # Domain for the OIDC provider
+HOSTNAME=id.example.com              # Domain for the OIDC provider
+SITE_NAME=My OIDC Provider           # Display name used in emails, page titles, and content
+THEME=nbn24                          # Theme to use (nbn24, xalior, robotic)
 SESSION_SECRET=your_secure_secret    # Secret for session encryption
 COOKIE_KEYS=key1,key2,key3           # Comma-separated list of cookie encryption keys
 
@@ -246,6 +248,16 @@ pnpm run wdio
 pnpm run wdio -- --suite auth
 pnpm run wdio -- --suite registration
 ```
+
+## Themes
+
+The provider ships with three built-in themes, selectable via the `THEME` environment variable:
+
+- **nbn24** (default) — Clean, modern Bootstrap-based design with dark mode toggle
+- **xalior** — Bootstrap-based layout with a retro-styled aesthetic
+- **robotic** — Terminal/sci-fi inspired green-on-black theme
+
+Themes can override any layout template. If a theme doesn't provide a specific template, the default from `src/views/` is used. Shared content (Terms of Service, About page) lives in the `content/` directory and is available to all themes via Mustache partials.
 
 ## Features
 

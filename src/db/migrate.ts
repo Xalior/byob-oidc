@@ -2,6 +2,7 @@ import { migrate } from 'drizzle-orm/mysql2/migrator';
 import { drizzle } from "drizzle-orm/mysql2";
 import {config} from '../lib/config.ts'
 
+console.log(config);
 async function main(): Promise<void> {
   try {
     // Create a database connection using the configuration

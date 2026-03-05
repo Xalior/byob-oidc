@@ -1,0 +1,19 @@
+<div>
+    <h1>MULTI-FACTOR AUTHENTICATION</h1>
+    <form autocomplete="off" action="/interaction/{{uid}}/mfa" method="post">
+        <input type="hidden" name="_csrf" value="{{csrfToken}}">
+
+        <div>
+            <label for="login_mfa">ONE TIME PASSCODE:</label><br>
+            <input id="login_mfa"
+                   type="number"
+                   name="mfa"
+                   placeholder="------">
+        </div>
+
+        <button type="submit">VERIFY IDENTITY</button>
+        <div>
+            <a href="/interaction/{{ uid }}/abort">ABORT OPERATION</a>
+        </div>
+    </form>
+</div>
