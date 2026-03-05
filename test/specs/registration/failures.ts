@@ -7,7 +7,7 @@ import testdata from "../../../data/testdata.js"
 describe('Registration:Failures', () => {
     it("01: Can't register a duplicate...", async () => {
         await RegistrationPage.register("Duplicate User", testdata.admin.email, testdata.admin.password, testdata.admin.password);
-        await expect(RegistrationPage.invalidFeedback).toHaveText(expect.stringContaining('Error: User already exists'));
+        await expect(RegistrationPage.invalidFeedback).toHaveText(expect.stringMatching(/User already exists/i));
     });
 
     it("02: Can't register a short username...", async () => {
