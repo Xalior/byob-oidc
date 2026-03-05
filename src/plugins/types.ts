@@ -1,6 +1,6 @@
 import { Application } from 'express';
 
-export type PluginType = 'theme' | 'provider' | 'session' | 'mfa';
+export type PluginType = 'theme' | 'provider' | 'session' | 'mfa' | 'extension';
 
 export interface PluginMeta {
     name: string;
