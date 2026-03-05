@@ -64,13 +64,22 @@ function validatePlugin(plugin: any, type: PluginType): void {
     }
 }
 
+/** Map plugin type to its directory name under plugins-available/ */
+const TYPE_DIRS: Record<PluginType, string> = {
+    theme: 'themes',
+    provider: 'providers',
+    session: 'sessions',
+    mfa: 'mfa',
+    extension: 'extensions',
+};
+
 async function loadPlugin<T extends Plugin>(
     type: PluginType,
     name: string,
     config: PluginConfig
 ): Promise<T> {
     const pluginPath = new URL(
-        `../plugins-available/${type}s/${name}/index.ts`,
+        `../plugins-available/${TYPE_DIRS[type]}/${name}/index.ts`,
         import.meta.url
     ).href;
 
@@ -112,7 +121,7 @@ function parseList(value: string): string[] {
 /** Discover all available plugin directories for a given type */
 async function discoverAvailable(type: PluginType): Promise<string[]> {
     const { readdirSync, statSync } = await import('node:fs');
-    const baseDir = new URL(`../plugins-available/${type}s/`, import.meta.url);
+    const baseDir = new URL(`../plugins-available/${TYPE_DIRS[type]}/`, import.meta.url);
     try {
         const entries = readdirSync(baseDir);
         return entries.filter(name => {
