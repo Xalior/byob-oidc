@@ -1,0 +1,4 @@
+id,email,password_hash,name
+1,alice@example.com,$2b$11$o0uF.hqbIAnbVGxawEIUJedxPdDeH6aP0fHLrcrk/s8NRY96BNztO,Alice Smith
+2,bob@example.com,$2b$11$o0uF.hqbIAnbVGxawEIUJedxPdDeH6aP0fHLrcrk/s8NRY96BNztO,Bob Jones
+3,carol@example.com,$2b$11$o0uF.hqbIAnbVGxawEIUJedxPdDeH6aP0fHLrcrk/s8NRY96BNztO,Carol White
