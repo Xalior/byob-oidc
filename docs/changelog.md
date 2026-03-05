@@ -1,12 +1,36 @@
 # Changelog
 
-## Development Branch - Future Release v0.2.3
+## Release v0.3.0
+
+### Breaking Changes
+- **Environment Variables**: `SITE_NAME` and `THEME` are new environment variables. Existing deployments must update their `.env` files (see `_env_sample`). `SITE_NAME` defaults to `OIDC Provider` and `THEME` defaults to `nbn24` if not set.
+- **oidc-provider 8.x to 9.x**: Major library upgrade. Most installations won't need any changes unless you've customised the database adapter.
+
+### Major Changes
+- **Theme System**: Full multi-theme support with three bundled themes (nbn24, xalior, robotic)
+  - Themes can override individual layouts or fall back to defaults
+  - Theme selection via `THEME` environment variable
+  - Each theme includes its own static assets, layout templates, and styling
+- **Configurable Site Name**: Replaced all hard-coded brand references with a `SITE_NAME` environment variable
+  - Site name is available in all templates via `{{site_name}}`
+  - Emails, page titles, and content all respect the configured name
+- **Shared Content Partials**: Extracted TOS and About page content into reusable `content/` partials
+  - `{{> tos}}` and `{{> about}}` partials shared across all themes
+  - Content uses `{{site_name}}` for brand-agnostic text
+- **oidc-client upgrade**: Updated to latest OpenID client library
+
+### Bug Fixes
+- Fix body parser warning from oidc-provider by scoping urlencoded middleware to app routes only
+- Fix robotic theme: theme-aware views, light mode support, green scrollbar styling
+- Replace hard-coded startup timeout with discovery retry loop for reliable self-discovery
 - Fix a bug that stopped new grants being created for fresh apps on the closed circuit network
 - Handle a bug that could have exposed the wrong template variables
-- robots.txt now tells search engines to go away - we don't want to index our auth portal
 
-### Minor changes
-- Actually wrote the About page
+### Minor Changes
+- robots.txt now tells search engines to go away
+- Security dependency bumps
+- Updated About page content
+- Updated Terms of Service to use configurable site name
 
 ## Release v0.2.2
 - SMTP_SECURE, DEBUG_ADAPTER, DEBUG_ACCOUNT all now optional env, default false

@@ -1,0 +1,15 @@
+<div>
+    <h1 style="color: #ff0000; border-color: #ff0000;">SYSTEM CRITICAL ERROR</h1>
+    <div style="border: 1px solid #ff0000; padding: 20px; background-color: rgba(255, 0, 0, 0.1);">
+        {{#message}}
+            <p>DIAGNOSTIC: {{message}}</p>
+        {{/message}}
+        {{^message}}
+            <p>DIAGNOSTIC: UNKNOWN ANOMALY DETECTED.</p>
+            <p>RECOVERY: RE-INITIALIZE CONNECTION OR CONTACT SYSTEM ADMINISTRATOR.</p>
+        {{/message}}
+    </div>
+    <div style="margin-top: 20px;">
+        <a href="/">RETURN TO ROOT</a>
+    </div>
+</div>

@@ -1,5 +1,6 @@
 import * as path from 'node:path';
 import * as url from 'node:url';
+import { existsSync } from 'node:fs';
 import cors from 'cors';
 import express, { Request, Response, NextFunction, Application } from 'express';
 import session from 'express-session';
@@ -13,7 +14,6 @@ import * as log from './lib/log.js';
 import provider_routes from './provider/express.js';
 import client_routes from './controller/routes.js';
 import morgan from 'morgan';
-import bodyParser from "body-parser";
 import slugify from "slugify";
 import csrf from "@dr.pogodin/csurf";
 
@@ -64,8 +64,6 @@ const app: Application = express();
 // setup the logger
 app.use(morgan('combined', { stream: log.logstream }));
 
-app.use(bodyParser.urlencoded({ extended: true }));
-
 app.use(session({
     secret: process.env.SESSION_SECRET || 'session-secret',
     resave: false,
@@ -74,6 +72,12 @@ app.use(session({
         secure: true
     }
 }));
+
+// Parse URL-encoded bodies only for app routes (oidc-provider has its own body parser)
+app.use(
+    ['/register', '/profile', '/lost_password', '/reset_password', '/reconfirm', '/interaction'],
+    express.urlencoded({ extended: true })
+);
 
 // Setup CSRF protection
 const csrfProtection = csrf({
@@ -108,7 +112,7 @@ app.use(flash());
 app.use(cors());
 console.log(path.join(__dirname, '../public'));
 
-app.use('/static', express.static(path.join(__dirname, '../public')));
+app.use('/theme', express.static(path.join(__dirname, '../public/themes/'+config.theme)));
 
 // Set up Helmet for security - Remove "form-action" directive
 const directives = helmet.contentSecurityPolicy.getDefaultDirectives();
@@ -122,12 +126,18 @@ app.use(helmet({
 
 app.use(passport.authenticate('session'));
 
-// Register `.mustache` as the template engine
-app.engine('mustache', mustacheExpress());
+// Register `.mustache` as the template engine, with shared content partials
+const contentDir = path.join(__dirname, '../content');
+app.engine('mustache', mustacheExpress(contentDir));
 
 // Configure app views and template engine
 app.set('view engine', 'mustache');
-app.set('views', path.join(__dirname, 'views'));
+
+// Use theme-specific layouts if they exist, otherwise fall back to default views
+const themeLayoutsDir = path.join(__dirname, 'themes', config.theme, 'layouts');
+const defaultViewsDir = path.join(__dirname, 'views');
+const viewsDir = existsSync(themeLayoutsDir) ? themeLayoutsDir : defaultViewsDir;
+app.set('views', viewsDir);
 
 const hide_headers: string[] = ['login', 'mfa', 'register'];
 interface OIDCUser {
@@ -154,6 +164,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
             successes: req.flash('success'),
             user: req.user,
             csrfToken: res.locals.csrfToken,
+            site_name: config.site_name,
             hide_header: hide_headers.includes(view)
         };
 
@@ -228,8 +239,14 @@ try {
     let adapter: any;
     ({ default: adapter } = await import('./database_adapter.js'));
 
+    // DESTREUCTURE: Remove custom keys that confuse oidc-provider's Koa instance
+    const {
+        provider_url, hostname, theme, mode, database_url, cache_url,
+        debug, client_features, password, smtp, patreon, ...oidcConfig
+    } = config;
+
     // @ts-ignore - Set up the OIDC Provider -- the config is overloaded with some of our own parts
-    const provider = new Provider(config.provider_url, { adapter, ...config });
+    const provider = new Provider(config.provider_url, { adapter, ...oidcConfig });
 
     app.enable('trust proxy');
     provider.proxy = true;
@@ -269,19 +286,36 @@ try {
 
     console.info("Being period of self discovery: ", config.provider_url);
 
-    const asyncTimeout = (ms: number) => {
-        return new Promise((resolve) => {
-            setTimeout(resolve, ms);
-        });
-    };
+    const maxRetries = 30;
+    const retryInterval = 1000;
+    let attempts = 0;
 
-    await asyncTimeout(10000);
+    let discoveredIssuer: openidClient.Configuration | undefined;
 
-    issuer = await openidClient.discovery(
-        provider_url,
-        client_id,
-        client_secret,
-    );
+    while (attempts < maxRetries) {
+        try {
+            discoveredIssuer = await openidClient.discovery(
+                new URL(config.provider_url),
+                client_id,
+                client_secret,
+            );
+            break;
+        } catch (err: any) {
+            attempts++;
+            if (attempts >= maxRetries) {
+                console.error(`Failed to discover issuer after ${maxRetries} attempts.`);
+                throw err;
+            }
+            console.log(`Discovery attempt ${attempts} failed, retrying in ${retryInterval}ms...`);
+            await new Promise((resolve) => setTimeout(resolve, retryInterval));
+        }
+    }
+
+    if (!discoveredIssuer) {
+        throw new Error("Discovery failed: issuer is undefined");
+    }
+
+    issuer = discoveredIssuer;
 
     console.log('Discovered issuer:', issuer.serverMetadata());
 

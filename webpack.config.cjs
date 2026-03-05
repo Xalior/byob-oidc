@@ -1,12 +1,33 @@
 const path = require('path')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
-    plugins: [new MiniCssExtractPlugin()],
-    entry: './src/public/main.ts',
+    plugins: [
+        new MiniCssExtractPlugin({ filename: '[name]/main.css' }),
+        new CopyWebpackPlugin({
+            patterns: [
+                {
+                    from: 'src/themes/*/**/*.{png,jpg,jpeg,gif,webp,svg,ico}',
+                    to({ absoluteFilename }) {
+                        // src/themes/<theme>/... → <theme>/...
+                        const rel = absoluteFilename.replace(/.*[\\/]src[\\/]themes[\\/]/, '');
+                        const [theme, ...rest] = rel.split(/[\\/]/);
+                        return `${theme}/${rest.join('/')}`;
+                    },
+                    noErrorOnMissing: true
+                }
+            ]
+        })
+    ],
+    entry: {
+        nbn24: './src/themes/nbn24/main.ts',
+        xalior: './src/themes/xalior/main.ts',
+        robotic: './src/themes/robotic/main.ts'
+    },
     output: {
-        filename: 'main.js',
-        path: path.resolve(__dirname, 'public')
+        filename: '[name]/main.js',
+        path: path.resolve(__dirname, 'public/themes')
     },
     resolve: {
         extensions: ['.ts', '.js']
@@ -20,15 +41,28 @@ module.exports = {
         rules: [
             {
                 test: /\.ts$/,
-                use: 'ts-loader',
+                use: {
+                    loader: 'ts-loader',
+                    options: {
+                        transpileOnly: true
+                    }
+                },
                 exclude: /node_modules/
             },
             {
-                mimetype: 'image/svg+xml',
-                scheme: 'data',
+                test: /\.(svg|png|jpe?g|gif|webp|ico)$/i,
+                parser: {
+                    dataUrlCondition: { maxSize: 4 * 1024 } // inline if <= 4KB
+                },
                 type: 'asset/resource',
                 generator: {
-                    filename: 'icons/[hash].svg'
+                    filename: (pathData) => {
+                        const mod = pathData.module;
+                        const resource = mod?.resource || mod?.rootModule?.resource || '';
+                        const m = resource.match(/[\\/]src[\\/]themes[\\/]([^\\/]+)[\\/]/);
+                        const theme = m ? m[1] : 'assets';
+                        return `${theme}/icons/[contenthash][ext][query]`;
+                    }
                 }
             },
             {

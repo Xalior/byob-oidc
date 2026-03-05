@@ -1,10 +1,10 @@
 import { createEnv } from "@t3-oss/env-core";
-import { z} from "zod";
+import { z } from "zod";
 import dotenv from "dotenv";
-import {page} from "../../data/page.js";
 import jwks from '../../data/jkws.json' with { type: "json" };
-import {Client, Provider, ResourceServer, OIDCContext, KoaContextWithOIDC} from 'oidc-provider';
+import {Client, ResourceServer, KoaContextWithOIDC} from 'oidc-provider';
 
+const DEFAULT_THEME = 'nbn24';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -14,6 +14,8 @@ export const env = createEnv({
         PATREON_CLIENT_ID: z.string().optional(),
         PATREON_CLIENT_SECRET: z.string().optional(),
         HOSTNAME: z.string().nonempty("must not be empty"),
+        SITE_NAME: z.string().default('OIDC Provider'),
+        THEME: z.string().default(DEFAULT_THEME),
         MODE: z.string().default('dev'),
         DATABASE_URL: z.string().nonempty("MySQL database URL must not be empty"),
         CACHE_URL: z.string().nonempty("REDIS cache must not be empty"),
@@ -44,49 +46,21 @@ export const env = createEnv({
     },
 });
 
+const themeSpec = new URL(`../themes/${env.THEME}/theme.ts`, import.meta.url).href;
+let _themeApi: any;
+async function getThemeApi() {
+    if (!_themeApi) {
+        const themeModule = await import(themeSpec);
+        _themeApi = themeModule.default; // { name, page, logout, loggedout, error }
+        _themeApi.site_name = env.SITE_NAME;
+    }
+    return _themeApi;
+}
 
 interface Token {
     resourceServer?: ResourceServer;
     isSenderConstrained?: () => boolean;
 }
-//
-// interface Client {
-//     clientId: string;
-//     grantTypeAllowed: (type: string) => boolean;
-//     applicationType?: string;
-//     clientAuthMethod?: string;
-// }
-//
-// interface OidcContext {
-//     oidc: {
-//         params: {
-//             requested_expiry?: string;
-//         };
-//         result?: {
-//             consent?: {
-//                 grantId?: string;
-//             };
-//         };
-//         client: Client;
-//         session: {
-//             accountId: string;
-//             grantIdFor: (clientId: string) => string | undefined;
-//             exp: number;
-//         };
-//         account?: any;
-//         provider: {
-//             Grant: {
-//                 find: (id: string) => Promise<any>;
-//             };
-//         };
-//         entities: {
-//             RotatedRefreshToken?: {
-//                 remainingTTL: number;
-//             };
-//         };
-//     };
-//     host?: string;
-// }
 
 export interface Config {
     patreon: {
@@ -95,6 +69,8 @@ export interface Config {
     };
     provider_url: string;
     hostname: string;
+    site_name: string;
+    theme: string;
     mode: string;
     database_url: string;
     cache_url: string;
@@ -179,6 +155,8 @@ export interface Config {
 export const config: Config = {
     provider_url: `https://${env.HOSTNAME}/`,
     hostname: `${env.HOSTNAME}`,
+    site_name: `${env.SITE_NAME}`,
+    theme: `${env.THEME}`,
     mode: env.MODE,
     database_url: env.DATABASE_URL,
     cache_url: env.CACHE_URL,
@@ -238,17 +216,6 @@ export const config: Config = {
         },
         Session: 1209600 /* 14 days in seconds */
     },
-    //
-    // interactions: {
-    //     url(ctx, interaction) {
-    //         // console.log("Possible interaction hook: ", interaction);
-    //         return `/interaction/${interaction.uid}`;
-    //     },
-    // },
-    //
-    // async issueRefreshToken(ctx, client, code) {
-    //     return client.grantTypeAllowed('refresh_token');
-    // },
     async renderError(ctx, out, error) {
         //
         // console.log("RENDER CONTEXT:", ctx);
@@ -261,7 +228,7 @@ export const config: Config = {
             console.log("RENDER ERROR:", error);
         }
 
-        page(ctx, error_message);
+        ctx.body = (await getThemeApi()).page(error_message);
     },
 
     // Do not ask for a grants dialog confirmation - since we a closed circuit network, we grant what we ask for.
@@ -334,10 +301,16 @@ export const config: Config = {
                 // @param ctx - koa request context
                 // @param form - form source (id="op.logoutForm") to be embedded in the page and submitted by
                 //   the End-User
-                page(ctx, `<h1>Do you want to sign-out from the Single Sign-On (SSO) System at ${ctx.host} too?</h1>
-                    ${form}
-                    <button autofocus type="submit" form="op.logoutForm" value="yes" name="logout">Yes, sign me out</button>
-                    <button type="submit" form="op.logoutForm">No, stay signed in</button>`);
+                console.log("FORM:", form);
+                const themeApi = await getThemeApi();
+                if (themeApi.logout) {
+                    ctx.body = themeApi.logout(form, ctx.host);
+                } else {
+                    ctx.body = themeApi.page(`<h1>Do you want to sign-out from the Single Sign-On (SSO) System at ${ctx.host} too?</h1>
+                        ${form}
+                        <button autofocus type="submit" form="op.logoutForm" value="yes" name="logout">Yes, sign me out</button>
+                        <button type="submit" form="op.logoutForm">No, stay signed in</button>`);
+                }
             },
             postLogoutSuccessSource: async (ctx) => {
                 // @param ctx - koa request context
@@ -345,8 +318,13 @@ export const config: Config = {
                     clientId, clientName,
                 } = ctx.oidc.client || {}; // client is defined if the user chose to stay logged in with the authorization server
                 const display = clientName || clientId;
-                page(ctx, `<h1>Sign-out Success</h1>
+                const themeApi = await getThemeApi();
+                if (themeApi.loggedout) {
+                    ctx.body = themeApi.loggedout(display);
+                } else {
+                    ctx.body = themeApi.page(`<h1>Sign-out Success</h1>
                                 <p>Your sign-out ${display ? `with ${display}` : ''} was successful.</p>`);
+                }
             }
         }
     },

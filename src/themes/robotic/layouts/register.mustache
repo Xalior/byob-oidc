@@ -1,0 +1,63 @@
+<div>
+    <h1>NEW ENTITY REGISTRATION</h1>
+    <form method="POST" action="/register">
+        <input type="hidden" name="_csrf" value="{{csrfToken}}">
+
+        {{#reg_form.errors.display_name}}
+            <div class="alert alert-danger invalid-feedback d-block">ERROR: {{reg_form.errors.display_name}}</div>
+        {{/reg_form.errors.display_name}}
+        <div>
+            <label for="display_name">ENTITY NAME:</label><br>
+            <input type="text" name="display_name" id="display_name" value="{{reg_form.display_name}}" autocomplete="name">
+        </div>
+
+        {{#reg_form.errors.email}}
+            <div class="alert alert-danger invalid-feedback d-block">ERROR: {{reg_form.errors.email}}</div>
+        {{/reg_form.errors.email}}
+        <div>
+            <label for="login_email">ENTITY EMAIL:</label><br>
+            <input type="email" id="login_email" name="email" value="{{reg_form.email}}" autocomplete="email">
+        </div>
+
+        {{#reg_form.errors.password_1}}
+            <div class="alert alert-danger invalid-feedback d-block">ERROR: {{reg_form.errors.password_1}}</div>
+        {{/reg_form.errors.password_1}}
+        <div>
+            <label for="login_password">ACCESS KEY:</label><br>
+            <input type="password" id="login_password" name="password_1" autocomplete="new-password">
+        </div>
+
+        {{#reg_form.errors.password_2}}
+            <div class="alert alert-danger invalid-feedback d-block">ERROR: {{reg_form.errors.password_2}}</div>
+        {{/reg_form.errors.password_2}}
+        <div>
+            <label for="login_password_confirm">CONFIRM ACCESS KEY:</label><br>
+            <input type="password" id="login_password_confirm" name="password_2" autocomplete="new-password">
+        </div>
+
+        {{#reg_form.errors.agree_tos}}
+            <div class="alert alert-danger invalid-feedback d-block">ERROR: {{reg_form.errors.agree_tos}}</div>
+        {{/reg_form.errors.agree_tos}}
+        <div>
+            <input type="checkbox" id="agree_tos" name="agree_tos" {{#reg_form.agree_tos}}checked{{/reg_form.agree_tos}}>
+            <label for="agree_tos">I ACCEPT THE PROTOCOLS (TERMS OF SERVICE)</label>
+        </div>
+
+        <!-- Honeypot field - hidden from entities -->
+        <div class="d-none">
+            <input type="checkbox" id="confirm_spammer" name="confirm_spammer" {{#reg_form.confirm_spammer}}checked{{/reg_form.confirm_spammer}}>
+            <label for="confirm_spammer">I am a rogue unit.</label>
+        </div>
+
+        <button type="submit">INITIALIZE REGISTRATION</button>
+
+        <p>ALREADY REGISTERED? <a href="/login">LOGIN HERE</a></p>
+    </form>
+</div>
+
+<div>
+    <h3>PROTOCOLS (TERMS OF SERVICE)</h3>
+    <div style="height: 200px; overflow-y: auto; border: 1px solid var(--border-color); padding: 10px; font-size: 0.8em;">
+        {{> tos}}
+    </div>
+</div>
