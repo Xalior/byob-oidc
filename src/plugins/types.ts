@@ -15,6 +15,17 @@ export interface Plugin {
     shutdown?(): Promise<void>;
 }
 
+/**
+ * Service accessors injected into PluginConfig.
+ * External plugins use these instead of importing from core source paths.
+ */
+export interface PluginServices {
+    /** Get the active session plugin (cache: set/get/del) */
+    getSession(): any;
+    /** Nodemailer transporter for sending emails */
+    transporter: any;
+}
+
 /** Core config subset passed to plugins during initialize() */
 export interface PluginConfig {
     hostname: string;
@@ -34,4 +45,6 @@ export interface PluginConfig {
         adapter: boolean;
         account: boolean;
     };
+    /** Service accessors — available after session plugin is loaded */
+    services?: PluginServices;
 }
