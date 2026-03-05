@@ -8,10 +8,10 @@ module.exports = {
         new CopyWebpackPlugin({
             patterns: [
                 {
-                    from: 'src/themes/*/**/*.{png,jpg,jpeg,gif,webp,svg,ico}',
+                    from: 'src/plugins-available/themes/*/**/*.{png,jpg,jpeg,gif,webp,svg,ico}',
                     to({ absoluteFilename }) {
-                        // src/themes/<theme>/... → <theme>/...
-                        const rel = absoluteFilename.replace(/.*[\\/]src[\\/]themes[\\/]/, '');
+                        // src/plugins-available/themes/<theme>/... → <theme>/...
+                        const rel = absoluteFilename.replace(/.*[\\/]src[\\/]plugins-available[\\/]themes[\\/]/, '');
                         const [theme, ...rest] = rel.split(/[\\/]/);
                         return `${theme}/${rest.join('/')}`;
                     },
@@ -21,9 +21,9 @@ module.exports = {
         })
     ],
     entry: {
-        nbn24: './src/themes/nbn24/main.ts',
-        xalior: './src/themes/xalior/main.ts',
-        robotic: './src/themes/robotic/main.ts'
+        nbn24: './src/plugins-available/themes/nbn24/main.ts',
+        xalior: './src/plugins-available/themes/xalior/main.ts',
+        robotic: './src/plugins-available/themes/robotic/main.ts'
     },
     output: {
         filename: '[name]/main.js',
@@ -59,7 +59,7 @@ module.exports = {
                     filename: (pathData) => {
                         const mod = pathData.module;
                         const resource = mod?.resource || mod?.rootModule?.resource || '';
-                        const m = resource.match(/[\\/]src[\\/]themes[\\/]([^\\/]+)[\\/]/);
+                        const m = resource.match(/[\\/]src[\\/]plugins-available[\\/]themes[\\/]([^\\/]+)[\\/]/);
                         const theme = m ? m[1] : 'assets';
                         return `${theme}/icons/[contenthash][ext][query]`;
                     }

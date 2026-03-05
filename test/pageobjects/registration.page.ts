@@ -1,11 +1,13 @@
 import { $, browser } from '@wdio/globals'
 import Page from './page.ts';
-import { db } from "../../src/db/index.ts";
-import { confirmation_codes } from "../../src/db/schema.ts";
+import { initializeDb, getDb } from "../../src/plugins-available/providers/simple-sql/db.ts";
+import { config } from "../../src/lib/config.ts";
+initializeDb(config.database_url);
+import { confirmation_codes } from "../../src/plugins-available/providers/simple-sql/schema.ts";
 import { eq, desc } from "drizzle-orm";
 
 async function get_reset_code(): Promise<any> {
-    const reset_code = (await db.select()
+    const reset_code = (await getDb().select()
         .from(confirmation_codes)
         .where(
             eq(confirmation_codes.user_id, 1)

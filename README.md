@@ -1,269 +1,258 @@
-# NBN OIDC Provider
+# BYOB-OIDC (Bring Your Own Backend)
 
-An OpenID Connect (OIDC) Provider implementation that allows you to authenticate users and issue tokens for authorized applications.
+A plugin-based OpenID Connect (OIDC) Provider. Authenticate users, issue tokens, and extend functionality through a modular plugin architecture.
 
-## Project Overview
+## Overview
 
-This project consists of two main components:
+BYOB-OIDC is a standards-compliant OpenID Connect identity provider built on [oidc-provider](https://github.com/panva/node-oidc-provider). Every major subsystem is a swappable plugin:
 
-1. **OIDC Provider**: A standards-compliant OpenID Connect identity provider that handles authentication and authorization flows.
+| Plugin Type | Loading Model | Purpose |
+|---|---|---|
+| **Provider** | Single active | Where users come from (SQL, LDAP, CSV, etc.) |
+| **Session** | Single active | Runtime persistence (Redis, in-memory LRU) |
+| **Theme** | Multiple loaded, one default | UI appearance (all available themes loaded at boot) |
+| **MFA** | Multiple enabled | Multi-factor auth (users choose which to use) |
+| **Extension** | Multiple active | Optional features (account linking, custom routes, gamification) |
 
-2. **Admin Client**: Functions as an OIDC credential controller for account administration, user management, and application registration.
+The system ships with a working set of built-in plugins and is designed so that user-contributed plugins can be added in the future.
 
-The dual architecture allows for a complete identity management solution where the provider handles the core OIDC protocols while the client provides user-friendly interfaces for managing credentials, accounts, and application access.
+For a list of recent changes, see the [Changelog](docs/changelog.md).
 
-For a list of recent changes and updates, see the [Changelog](docs/changelog.md).
+## Quick Start
 
-## Package Manager: pnpm
+### Prerequisites
 
-This project uses [pnpm](https://pnpm.io/) as its package manager. Please do not use npm or yarn to install dependencies or run scripts.
+- Node.js 22.14+
+- pnpm 10.7+
 
-### Why pnpm?
-
-- Faster installation times
-- More efficient disk space usage
-- Better dependency management
-- Strict mode to prevent phantom dependencies
+Additional dependencies depend on your plugin choices:
+- **simple-sql** provider: MySQL/MariaDB database
+- **redis** session: Redis server (the `lru` plugin requires no external dependencies but sessions are lost on restart)
 
 ### Installation
-
-First, install pnpm if you don't have it already:
-
-```bash
-npm install -g pnpm
-```
-
-Then, install dependencies:
 
 ```bash
 pnpm install
 ```
 
-### Running Scripts
-
-Use pnpm to run scripts defined in package.json:
-
-```bash
-pnpm start           # Start the server
-pnpm dev             # Run with watch mode for development
-pnpm run db:generate # Generate database migrations
-pnpm run db:push     # Push database schema changes
-```
-
-### Note
-
-The project is configured to enforce the use of pnpm. If you try to use npm, the installation will fail with an error message.
-
-## Setup Instructions
-
-### 1. Generate JWKS (JSON Web Key Set)
-
-Before running the application, you need to generate the cryptographic keys used for signing tokens:
-
-```bash
-pnpm run generate-jwks
-```
-
-This script will:
-- Create a `keys` directory if it doesn't exist
-- Generate RSA and EC private keys using OpenSSL
-- Convert these keys to JWK format
-- Create both private and public JWKS files
-- Set secure permissions for the generated files
-
-Options:
-- `-f`: Force overwrite existing keys
-- `--no-public`: Skip public JWKS generation
-
-Example:
-```bash
-pnpm run generate-jwks -- -f  # Force overwrite existing keys
-```
-
-**Important**: Keep your private keys secure! Do not share them or include them in your application code.
-
-### 2. Configure the Application
-
-Copy the example environment file and modify it according to your needs:
+### Configuration
 
 ```bash
 cp _env_sample .env
 ```
 
-Edit the `.env` file to configure:
-- Database connections
-- OIDC provider settings
-- Email settings
-- Security settings
-- Feature flags
+Edit `.env` — see [Environment Variables](#environment-variables) below.
 
-### 3. Start the Application
+### Generate JWKS
 
 ```bash
-pnpm start
+pnpm run generate-jwks
 ```
 
-For development with auto-reload:
-```bash
-pnpm dev
-```
+This creates cryptographic keys for signing OIDC tokens. Use `-f` to force overwrite existing keys.
 
-## Project Structure
-
-### Data Directory
-
-The `data` directory contains:
-
-- `page.ts`: Page formatter for customizing the HTML structure of pages
-- `jkws.json`: JSON Web Key Set file generated with our tool
-- `testdata.js`: Test data for development
-
-This directory is mounted as a volume when running in Docker to persist data.
-
-## Production Deployment
-
-### Environment Variables
-
-For production deployment, you should configure the following environment variables:
+### Start
 
 ```bash
-# General configuration
-NODE_ENV=production                  # Set to 'production' for production environment
-HOSTNAME=id.example.com              # Domain for the OIDC provider
-SITE_NAME=My OIDC Provider           # Display name used in emails, page titles, and content
-THEME=nbn24                          # Theme to use (nbn24, xalior, robotic)
-SESSION_SECRET=your_secure_secret    # Secret for session encryption
-COOKIE_KEYS=key1,key2,key3           # Comma-separated list of cookie encryption keys
-
-# Database and cache configuration
-DATABASE_URL=mysql://user:pass@host:port/database
-CACHE_URL=redis://host:port/
-
-# SMTP configuration
-SMTP_HOST=smtp.example.com
-SMTP_PORT=587
-SMTP_SECURE=false                    # Set to 'true' for SSL/TLS
-SMTP_USER=your_smtp_username
-SMTP_PASS=your_smtp_password
-
-# Client configuration
-CLIENT_ID=your_client_id
-CLIENT_SECRET=your_client_secret
-
-# Patreon integration (if used)
-PATREON_CLIENT_ID=your_patreon_client_id
-PATREON_CLIENT_SECRET=your_patreon_client_secret
+pnpm start        # Production
+pnpm dev           # Development with watch mode
 ```
 
-### Production Checklist
+## Plugin Architecture
 
-Before deploying to production, ensure you have:
+### Directory Structure
 
-1. Generated secure JWKS keys using `pnpm run generate-jwks`
-2. Set all required environment variables with secure values
-3. Configured proper database and cache connections
-4. Set up proper SMTP settings for email delivery
-5. Disabled any debugging features
-6. Ensured HTTPS is properly configured
-
-## Docker Support
-
-This project includes Docker support for easy deployment and containerization.
-
-### Database Initialization
-
-The Docker container automatically initializes the database on startup by:
-1. Generating database migrations if they don't exist
-2. Pushing schema changes to the database (creating tables if they don't exist and updating them if they do)
-3. Running any pending migrations that haven't been applied yet
-
-This ensures that your database schema is always up-to-date when the container starts, making the database "automatically upgrading" without errors even if tables already exist. The system gracefully handles both fresh installations and updates to existing databases.
-
-### Quick Start with Docker
-
-```bash
-# Build and run with Docker Compose
-docker-compose up
-
-# Or build and run manually with environment variables
-docker build -t nbn-oidc-provider .
-docker run -p 3000:3000 \
-  -v $(pwd)/data:/app/data \
-  -e NODE_ENV=production \
-  -e SESSION_SECRET=your_secure_secret \
-  -e DATABASE_URL=mysql://user:pass@host:port/database \
-  -e CACHE_URL=redis://host:port/ \
-  nbn-oidc-provider
+```
+src/
+  plugins/
+    registry.ts              # Plugin loader, validator, registry
+    types.ts                 # Shared plugin interfaces
+    theme/interface.ts       # ThemePlugin interface
+    provider/interface.ts    # ProviderPlugin interface
+    session/interface.ts     # SessionPlugin interface
+    mfa/interface.ts         # MFAPlugin interface
+    extension/interface.ts   # ExtensionPlugin interface
+  plugins-available/
+    themes/
+      nbn24/                 # Clean, modern Bootstrap design
+      robotic/               # Terminal/sci-fi green-on-black
+      xalior/                # Retro-styled Bootstrap layout
+    providers/
+      simple-sql/            # MySQL + bcrypt authentication
+    sessions/
+      redis/                 # Redis-backed persistence
+      lru/                   # In-memory LRU (dev/test only)
+    mfa/
+      otp/                   # Email one-time password
+      none/                  # Pass-through (no MFA)
+    extensions/
+      # Future: discord/, patreon/, etc.
 ```
 
-For detailed Docker instructions, including deployment options and configuration, see [Docker Documentation](docs/docker.md).
+### Built-in Plugins
+
+**Providers:**
+- `simple-sql` — MySQL/MariaDB with bcrypt password hashing. Includes registration, profile management, password reset, and email confirmation routes.
+
+**Sessions:**
+- `redis` — Redis-backed OIDC adapter and express-session store. Production-ready.
+- `lru` — In-memory Map with TTL eviction. No external dependencies, but sessions are lost on restart.
+
+**Themes:**
+- `nbn24` — Clean Bootstrap design with dark mode toggle (default)
+- `xalior` — Retro-styled Bootstrap layout
+- `robotic` — Terminal/sci-fi green-on-black theme
+
+Themes can override individual Mustache layout templates. Missing templates fall back to defaults in `src/views/`. Shared content (TOS, About) lives in `content/` and is available to all themes via Mustache partials.
+
+**MFA:**
+- `otp` — Generates a 6-digit PIN, emails it to the user, and verifies it. Uses the session plugin's cache for storage.
+- `none` — Pass-through, always succeeds. Use when MFA isn't required.
+
+Multiple MFA plugins can be enabled simultaneously (`MFA=otp,none`). Users choose which to use.
+
+**Extensions:**
+- No built-in extensions yet. The plugin type supports custom routes, middleware, OIDC claims/scopes, and account linking.
+
+## Environment Variables
+
+### Core Settings
+
+| Variable | Default | Description |
+|---|---|---|
+| `HOSTNAME` | *(required)* | Domain for the OIDC provider (e.g., `id.example.com`) |
+| `SITE_NAME` | `OIDC Provider` | Display name used in emails, titles, and content |
+| `PORT` | `5000` | HTTP listen port |
+| `SESSION_SECRET` | `session-secret` | Secret for express-session encryption |
+| `COOKIE_KEYS` | *(required)* | Comma-separated cookie encryption keys |
+
+### Plugin Selection
+
+| Variable | Default | Description |
+|---|---|---|
+| `PROVIDER` | `simple-sql` | Provider plugin to load |
+| `SESSION` | `redis` | Session plugin to load |
+| `THEME` | `nbn24` | Default theme (all available themes are loaded) |
+| `MFA` | `otp` | Comma-separated list of MFA plugins to enable |
+| `EXTENSIONS` | *(empty)* | Comma-separated list of extension plugins to enable |
+
+### OIDC Client (Self-Discovery)
+
+| Variable | Default | Description |
+|---|---|---|
+| `CLIENT_ID` | `SELF` | OIDC client ID (must match a record in the clients table) |
+| `CLIENT_SECRET` | `SELF_SECRET` | OIDC client secret |
+
+### SMTP (Core Service)
+
+| Variable | Default | Description |
+|---|---|---|
+| `SMTP_HOST` | *(required)* | SMTP relay hostname |
+| `SMTP_PORT` | `25` | SMTP port |
+| `SMTP_SECURE` | `false` | Use SSL/TLS |
+| `SMTP_USER` | *(optional)* | SMTP username |
+| `SMTP_PASS` | *(optional)* | SMTP password |
+
+### Provider: simple-sql
+
+| Variable | Default | Description |
+|---|---|---|
+| `DATABASE_URL` | *(required)* | MySQL connection string |
+| `PASSWORD_SALT` | `11` | bcrypt salt rounds |
+| `CLIENT_FEATURES_REGISTRATION` | `true` | Enable user self-registration |
+
+### Session: redis
+
+| Variable | Default | Description |
+|---|---|---|
+| `CACHE_URL` | *(required)* | Redis connection string |
+
+### Optional Integrations
+
+| Variable | Description |
+|---|---|
+| `PATREON_CLIENT_ID` | Patreon OAuth client ID |
+| `PATREON_CLIENT_SECRET` | Patreon OAuth client secret |
+
+### Debug
+
+| Variable | Default | Description |
+|---|---|---|
+| `DEBUG_ADAPTER` | `false` | Log session adapter operations |
+| `DEBUG_ACCOUNT` | `false` | Log account lookups |
 
 ## Development
 
-### Building Frontend Assets
+### Package Manager: pnpm
 
-The project uses webpack for building frontend assets, but there's no dedicated script in package.json. To build frontend assets, use webpack directly:
+This project enforces pnpm. npm/yarn installations will fail.
 
 ```bash
-npx webpack --mode production
+npm install -g pnpm    # Install pnpm if needed
+pnpm install           # Install dependencies
 ```
 
-For development with hot reloading:
+### Building Frontend Assets
 
 ```bash
-npx webpack serve --mode development
+pnpm run build:assets                    # Production build
+npx webpack serve --mode development     # Dev server with hot reload
 ```
 
 ### Database Management
 
 ```bash
-# Generate database migrations
-pnpm run db:generate
-
-# Push schema changes to the database
-pnpm run db:push
-
-# Reset the database (remove and recreate)
-pnpm run db:remake
-```
-
-### TypeScript
-
-This project is written in TypeScript with full type coverage at the point of linting. TypeScript is executed directly, not transpiled.
-
-```bash
-# Run TypeScript linting and type checking
-pnpm lint
+pnpm run db:generate      # Generate Drizzle migrations
+pnpm run db:push          # Push schema changes
+pnpm run db:run-migrations # Run pending migrations
+pnpm run db:remake        # Reset and recreate database
 ```
 
 ### Running Tests
 
-The project uses WebDriver.IO for end-to-end testing of authentication flows and other functionality.
+End-to-end tests use WebDriverIO with Safari.
 
 ```bash
-# Run all tests
-pnpm run wdio
-
-# Run specific test suite
-pnpm run wdio -- --suite auth
-pnpm run wdio -- --suite registration
+pnpm run wdio                          # Run all tests
+pnpm run wdio -- --suite auth          # Auth test suite
+pnpm run wdio -- --suite registration  # Registration test suite
 ```
 
-## Themes
+### TypeScript
 
-The provider ships with three built-in themes, selectable via the `THEME` environment variable:
+TypeScript is executed directly via tsx (not transpiled). Type checking:
 
-- **nbn24** (default) — Clean, modern Bootstrap-based design with dark mode toggle
-- **xalior** — Bootstrap-based layout with a retro-styled aesthetic
-- **robotic** — Terminal/sci-fi inspired green-on-black theme
+```bash
+pnpm lint
+```
 
-Themes can override any layout template. If a theme doesn't provide a specific template, the default from `src/views/` is used. Shared content (Terms of Service, About page) lives in the `content/` directory and is available to all themes via Mustache partials.
+## Docker
 
-## Features
+See [Docker Documentation](docs/docker.md) for build and deployment instructions.
 
-### Authentication Features
+```bash
+docker-compose up                      # Quick start
+docker build -t byob-oidc .           # Manual build
+```
 
-- **Multi-Factor Authentication**: Email-based PIN verification for secure login
-- **Remember Me**: Option to stay logged in for extended periods (30 days)
-- **Password Reset**: Self-service password recovery flow
-- **Account Confirmation**: Email verification for new accounts
+## Boot Sequence
+
+1. Load app config (Zod env validation)
+2. Initialize plugin registry
+3. Load session plugin (single active)
+4. Load provider plugin (single active)
+5. Load MFA plugins (multiple active)
+6. Load all available theme plugins (config sets default)
+7. Load extension plugins (multiple active)
+8. Build OIDC provider config
+9. Create Express app with middleware
+10. Register routes (core + provider + extensions)
+11. Mount oidc-provider
+12. Start server, self-discovery loop, Passport setup
+
+## Architecture Notes
+
+- **Config split**: `src/lib/config.ts` handles app config (Zod validation, no oidc-provider types). `src/lib/oidc-config.ts` builds the oidc-provider config object. Plugins never see oidc-provider types.
+- **Provider design**: Providers are headless by default — they answer "does this user exist?" and "are these credentials valid?". Route-providing features (registration, profiles) are optional and provider-specific.
+- **MFA independence**: MFA is not a provider concern. It's an independent verification layer between authentication and session creation.
+- **Extension model**: Extensions are purely additive. They can register routes, middleware, OIDC claims, and scopes.

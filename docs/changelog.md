@@ -1,11 +1,40 @@
 # Changelog
 
-## Unreleased
+## Release v0.4.0 — BYOB-OIDC
+
+**Project renamed** from NBN OIDC Provider to BYOB-OIDC (Bring Your Own Backend).
+
+### Breaking Changes
+- **Plugin Architecture**: The entire application has been restructured around a plugin system with five plugin types: Provider, Session, Theme, MFA, and Extension. See [MIGRATION_PLAN.md](/MIGRATION_PLAN.md) for the full plan.
+- **New Environment Variables**: `PROVIDER`, `SESSION`, `MFA`, and `EXTENSIONS` are new plugin selector env vars. Existing deployments should add these to `.env` (defaults match previous behavior: `PROVIDER=simple-sql`, `SESSION=redis`, `MFA=otp`).
+- **Config Split**: `config.ts` is now app-only config (no oidc-provider types). OIDC-specific config moved to `oidc-config.ts`.
+- **Directory Structure**: Source files moved under `src/plugins-available/` — themes, providers, sessions, and MFA plugins each live in their own directory.
+
+### Major Changes
+- **Plugin Registry**: New plugin loading system with discovery, validation, lifecycle management, and multi-active support. Registry supports single-active (provider, session) and multi-active (theme, mfa, extension) plugins.
+- **Provider Plugin**: User authentication extracted into a swappable provider plugin. `simple-sql` (MySQL + bcrypt) is the built-in provider. Providers own their routes (registration, profile, password reset, etc.).
+- **Session Plugin**: OIDC adapter and express-session store extracted into session plugins. `redis` (production) and `lru` (dev/test) are built-in.
+- **MFA Plugin**: Multi-factor auth extracted from interaction routes into MFA plugins. `otp` (email PIN) and `none` (pass-through) are built-in. Multiple MFA plugins can be enabled simultaneously.
+- **Extension Plugin Type**: New plugin type for optional features — account linking, custom routes, middleware, OIDC claims/scopes. No built-in extensions yet.
+- **Config Split**: App config (`config.ts`) separated from OIDC provider config (`oidc-config.ts`). Plugins never see oidc-provider types.
+- **Boot Sequence Rewrite**: `server.ts` rewritten to load plugins via registry, then wire them into Express and oidc-provider.
+
+### Removed
+- `src/lib/plugin.ts` (dead Discord bot code)
+- `src/database_adapter.ts` (replaced by session plugins)
+- Users/confirmation_codes tables from core schema (moved to simple-sql provider)
+- Provider-specific email functions from core `email.ts` (moved to plugins)
+
+### Minor Changes
+- `_env_sample` updated with plugin selection variables and organized sections
+- Webpack config updated for new theme paths under `plugins-available/themes/`
+- Test suite updated for new import paths
+- `initializeDb()` made idempotent for test compatibility
 
 ## Release v0.3.1
 
 ### Bug Fixes
-- Fix stale flash messages persisting after successful login — flash errors from prior failed attempts (bad CSRF, wrong password, etc.) are now cleared on successful callback
+- Clear stale flash messages on successful login
 
 ## Release v0.3.0
 
