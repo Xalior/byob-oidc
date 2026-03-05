@@ -1,3 +1,5 @@
+let _site_name = 'OIDC Provider';
+
 const single_render = (html: string)  => {
     return `<!DOCTYPE html>
         <html>
@@ -5,7 +7,7 @@ const single_render = (html: string)  => {
                 <meta charset="utf-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
                 <meta http-equiv="x-ua-compatible" content="ie=edge">
-                <title>NBN:ID</title>
+                <title>${_site_name}</title>
                 <link rel="stylesheet" href="/theme/main.css">
             </head>
             <body class="d-flex align-items-center py-4 bg-body-tertiary">
@@ -73,6 +75,8 @@ const single_render = (html: string)  => {
 
 export default {
     name: 'nbn24',
+    set site_name(name: string) { _site_name = name; },
+    get site_name() { return _site_name; },
     page: (html: string)  => single_render(html),
     logout: (form: string, hostname: string)  => {
         return single_render(`<h1>Do you want to sign-out from the Single Sign-On (SSO) System at ${hostname} too?</h1>

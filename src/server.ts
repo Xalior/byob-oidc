@@ -123,8 +123,9 @@ app.use(helmet({
 
 app.use(passport.authenticate('session'));
 
-// Register `.mustache` as the template engine
-app.engine('mustache', mustacheExpress());
+// Register `.mustache` as the template engine, with shared content partials
+const contentDir = path.join(__dirname, '../content');
+app.engine('mustache', mustacheExpress(contentDir));
 
 // Configure app views and template engine
 app.set('view engine', 'mustache');
@@ -160,6 +161,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
             successes: req.flash('success'),
             user: req.user,
             csrfToken: res.locals.csrfToken,
+            site_name: config.site_name,
             hide_header: hide_headers.includes(view)
         };
 
