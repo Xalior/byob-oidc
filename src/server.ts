@@ -14,7 +14,6 @@ import * as log from './lib/log.js';
 import provider_routes from './provider/express.js';
 import client_routes from './controller/routes.js';
 import morgan from 'morgan';
-import bodyParser from "body-parser";
 import slugify from "slugify";
 import csrf from "@dr.pogodin/csurf";
 
@@ -65,8 +64,6 @@ const app: Application = express();
 // setup the logger
 app.use(morgan('combined', { stream: log.logstream }));
 
-app.use(bodyParser.urlencoded({ extended: true }));
-
 app.use(session({
     secret: process.env.SESSION_SECRET || 'session-secret',
     resave: false,
@@ -75,6 +72,12 @@ app.use(session({
         secure: true
     }
 }));
+
+// Parse URL-encoded bodies only for app routes (oidc-provider has its own body parser)
+app.use(
+    ['/register', '/profile', '/lost_password', '/reset_password', '/reconfirm', '/interaction'],
+    express.urlencoded({ extended: true })
+);
 
 // Setup CSRF protection
 const csrfProtection = csrf({
