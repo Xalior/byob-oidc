@@ -6,6 +6,9 @@
     --text-color: #00ff41;
     --accent-color: #008f11;
     --border-color: #00ff41;
+    --container-bg: rgba(0, 0, 0, 0.8);
+    --scanline-dark: rgba(18, 16, 16, 0);
+    --scanline-band: rgba(0, 0, 0, 0.1);
 }
 
 [data-bs-theme="dark"] {
@@ -13,13 +16,24 @@
     --text-color: #00ff41;
     --accent-color: #008f11;
     --border-color: #00ff41;
+    --container-bg: rgba(0, 0, 0, 0.8);
+    --scanline-dark: rgba(18, 16, 16, 0);
+    --scanline-band: rgba(0, 0, 0, 0.1);
 }
 
 [data-bs-theme="light"] {
-    --bg-color: #f0f0f0;
-    --text-color: #222;
-    --accent-color: #555;
-    --border-color: #222;
+    --bg-color: #e8e8e8;
+    --text-color: #006b1a;
+    --accent-color: #004d13;
+    --border-color: #006b1a;
+    --container-bg: rgba(255, 255, 255, 0.9);
+    --scanline-dark: rgba(240, 240, 240, 0);
+    --scanline-band: rgba(0, 0, 0, 0.04);
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--text-color) var(--bg-color);
 }
 
 body {
@@ -45,7 +59,7 @@ body::before {
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
+    background: linear-gradient(var(--scanline-dark) 50%, var(--scanline-band) 50%),
                 linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
     background-size: 100% 2px, 3px 100%;
     pointer-events: none;
@@ -59,7 +73,7 @@ body::before {
     padding: 20px;
     border: 1px solid var(--border-color);
     box-shadow: 0 0 15px var(--accent-color);
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: var(--container-bg);
 }
 
 h1, h2, h3 {
@@ -129,6 +143,13 @@ nav li {
 .alert-info { border-color: #00bfff; color: #00bfff; }
 .alert-warning { border-color: #ffff00; color: #ffff00; }
 .alert-danger { border-color: #ff0000; color: #ff0000; }
+
+[data-bs-theme="light"] {
+    .alert-success { border-color: #006b1a; color: #006b1a; }
+    .alert-info { border-color: #005f8a; color: #005f8a; }
+    .alert-warning { border-color: #8a7000; color: #8a7000; }
+    .alert-danger { border-color: #cc0000; color: #cc0000; }
+}
 
 .d-none { display: none; }
 

@@ -1,0 +1,23 @@
+<div>
+    <h1>RESEND CONFIRMATION TRANSMISSION</h1>
+    <form autocomplete="off" action="/reconfirm" method="post">
+        <input type="hidden" name="_csrf" value="{{csrfToken}}">
+        <p>IF YOUR CONFIRMATION TRANSMISSION WAS LOST OR EXPIRED, PROVIDE YOUR EMAIL TO RECEIVE A NEW ONE.</p>
+
+        {{#conf_form.errors.email}}
+            <div class="alert alert-danger">ERROR: {{conf_form.errors.email}}</div>
+        {{/conf_form.errors.email}}
+        <div>
+            <label for="email">ENTITY EMAIL:</label><br>
+            <input id="email"
+                   type="email"
+                   name="email"
+                   placeholder="entity@network.local">
+        </div>
+
+        <button type="submit">RESEND CONFIRMATION</button>
+        <div>
+            <a href="/login">RETURN TO LOGIN</a>
+        </div>
+    </form>
+</div>

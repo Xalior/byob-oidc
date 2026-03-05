@@ -1,5 +1,6 @@
 import * as path from 'node:path';
 import * as url from 'node:url';
+import { existsSync } from 'node:fs';
 import cors from 'cors';
 import express, { Request, Response, NextFunction, Application } from 'express';
 import session from 'express-session';
@@ -127,7 +128,12 @@ app.engine('mustache', mustacheExpress());
 
 // Configure app views and template engine
 app.set('view engine', 'mustache');
-app.set('views', path.join(__dirname, 'views'));
+
+// Use theme-specific layouts if they exist, otherwise fall back to default views
+const themeLayoutsDir = path.join(__dirname, 'themes', config.theme, 'layouts');
+const defaultViewsDir = path.join(__dirname, 'views');
+const viewsDir = existsSync(themeLayoutsDir) ? themeLayoutsDir : defaultViewsDir;
+app.set('views', viewsDir);
 
 const hide_headers: string[] = ['login', 'mfa', 'register'];
 interface OIDCUser {
