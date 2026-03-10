@@ -15,8 +15,8 @@ RUN pnpm install
 COPY . .
 
 # Create data volume and external plugin directory structure
-VOLUME /data
-RUN mkdir -p /data/plugins/providers /data/plugins/sessions /data/plugins/themes /data/plugins/mfa /data/plugins/extensions
+VOLUME /app/data
+RUN mkdir -p /app/data/plugins/providers /app/data/plugins/sessions /app/data/plugins/themes /app/data/plugins/mfa /app/data/plugins/extensions
 
 # Expose the port the app runs on
 #EXPOSE 5000

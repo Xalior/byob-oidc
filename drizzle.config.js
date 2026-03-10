@@ -4,5 +4,6 @@ export default {
   dialect: "mysql",
   dbCredentials: {
     url: process.env.DATABASE_URL,
-  }
+  },
+  tablesFilter: ["clients"],
 }; 
