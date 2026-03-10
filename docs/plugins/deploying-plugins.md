@@ -175,7 +175,7 @@ Mount your data directory containing prebuilt plugins:
 
 ```bash
 docker run -p 5000:5000 \
-  -v $(pwd)/data:/data \
+  -v $(pwd)/data:/app/data \
   -e PROVIDER=example-csv \
   -e MFA=example-captcha \
   -e CSV_USERS_FILE=/data/users.csv \
@@ -205,7 +205,7 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - ./data:/data
+      - ./data:/app/data
     environment:
       - HOSTNAME=id.example.com
       - PROVIDER=example-csv

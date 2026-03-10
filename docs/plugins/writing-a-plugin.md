@@ -332,6 +332,66 @@ const plugin: ExtensionPlugin = {
 export default plugin;
 ```
 
+## Database Tables
+
+If your plugin needs database tables, use the `pushPluginSchema()` helper. This runs `drizzle-kit push` scoped to only your plugin's tables, so you get full Drizzle schema management without risking other plugins' or core tables.
+
+### 1. Define your schema
+
+Create a standard Drizzle schema file:
+
+```typescript
+// my-provider/schema.ts
+import { mysqlTable, text, int, timestamp } from 'drizzle-orm/mysql-core';
+
+export const myUsers = mysqlTable('my_users', {
+    id: int('id').primaryKey().autoincrement(),
+    username: text('username').notNull(),
+    created_at: timestamp('created_at').notNull().defaultNow(),
+});
+```
+
+### 2. Push during initialization
+
+```typescript
+// my-provider/db.ts
+import { drizzle } from 'drizzle-orm/mysql2';
+import { pushPluginSchema } from '../../../plugins/schema-push.ts';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+let _db: ReturnType<typeof drizzle> | null = null;
+
+export async function initializeDb(databaseUrl: string) {
+    if (_db) return _db;
+
+    await pushPluginSchema({
+        schemaPath: join(__dirname, 'schema.ts'),
+        tables: ['my_users'],
+        databaseUrl,
+    });
+
+    _db = drizzle(databaseUrl);
+    return _db;
+}
+```
+
+### 3. Call from initialize()
+
+```typescript
+async initialize(config: PluginConfig) {
+    const databaseUrl = process.env.DATABASE_URL;
+    if (!databaseUrl) throw new Error('DATABASE_URL is required');
+    await initializeDb(databaseUrl);
+}
+```
+
+The tables are created on first boot, and schema changes are applied automatically on subsequent starts. The `tables` array acts as a safety boundary — `drizzle-kit` will only ever touch the tables you declare.
+
+See [Plugin Schema Management](./architecture.md#plugin-schema-management) for the full details.
+
 ## Reading Configuration
 
 Plugins receive core config via `initialize(config)`. For plugin-specific configuration, read directly from `process.env`:

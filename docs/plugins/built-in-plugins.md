@@ -16,7 +16,7 @@ MySQL-backed user authentication with bcrypt password hashing.
 simple-sql/
   index.ts           # Plugin entry point
   account.ts         # Account class, password verification, user lookup
-  db.ts              # Drizzle ORM + MySQL connection
+  db.ts              # Drizzle ORM + MySQL connection + schema bootstrap
   schema.ts          # Database schema (users, confirmation_codes tables)
   email.ts           # Email templates (confirmation, password reset)
   routes/
@@ -39,11 +39,14 @@ simple-sql/
 - bcrypt password hashing
 - Password reset via email
 - User profile management
+- Self-managing database schema via `pushPluginSchema()` (tables are created/updated on boot)
 - OIDC claims: `sub`, `email`, `email_verified`, `name`, `nickname`, `preferred_username`, `updated_at`
 
 **Database tables owned:**
 - `users` -- user accounts
 - `confirmation_codes` -- email confirmation and password reset tokens
+
+Tables are managed by the plugin itself during initialization using `pushPluginSchema()`. The Drizzle schema in `schema.ts` is the source of truth — changes to it are applied automatically on the next server start. See [Plugin Schema Management](./architecture.md#plugin-schema-management).
 
 ---
 

@@ -201,12 +201,16 @@ npx webpack serve --mode development     # Dev server with hot reload
 
 ### Database Management
 
+Core tables (e.g., `clients`) are managed by Drizzle via the central `drizzle.config.js`. Plugin-owned tables are managed by each plugin during initialization using `pushPluginSchema()`.
+
 ```bash
-pnpm run db:generate      # Generate Drizzle migrations
-pnpm run db:push          # Push schema changes
+pnpm run db:generate      # Generate Drizzle migrations (core tables only)
+pnpm run db:push          # Push core schema changes
 pnpm run db:run-migrations # Run pending migrations
 pnpm run db:remake        # Reset and recreate database
 ```
+
+Plugins that need database tables call `pushPluginSchema()` from their `initialize()` method. This runs `drizzle-kit push` scoped to only the plugin's declared tables via `tablesFilter`, so plugins can never interfere with each other's or core tables. See [Plugin Schema Management](docs/plugins/architecture.md#plugin-schema-management) for details.
 
 ### Running Tests
 
@@ -246,9 +250,10 @@ docker build -t byob-oidc .           # Manual build
 7. Load extension plugins (multiple active)
 8. Build OIDC provider config
 9. Create Express app with middleware
-10. Register routes (core + provider + extensions)
-11. Mount oidc-provider
-12. Start server, self-discovery loop, Passport setup
+10. Merge content partials (defaults + data-volume overrides)
+11. Register routes (core + provider + extensions)
+12. Mount oidc-provider
+13. Start server, self-discovery loop, Passport setup
 
 ## Architecture Notes
 

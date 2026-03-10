@@ -9,6 +9,7 @@ src/
   plugins/                        # Plugin infrastructure (interfaces, registry)
     types.ts                      # Base Plugin interface, PluginConfig, PluginType
     registry.ts                   # Discovery, loading, validation, lifecycle
+    schema-push.ts                # Drizzle schema push helper for plugins
     theme/interface.ts            # ThemePlugin interface
     provider/interface.ts         # ProviderPlugin + OIDCAccount interfaces
     session/interface.ts          # SessionPlugin + OIDCAdapter interfaces
@@ -211,3 +212,61 @@ interface PluginConfig {
 ```
 
 Plugins that need additional configuration (database URLs, API keys, etc.) read their own env vars directly from `process.env` during `initialize()`.
+
+## Plugin Schema Management
+
+Plugins that need database tables manage their own schema using the `pushPluginSchema()` helper (`src/plugins/schema-push.ts`). This is the recommended approach — it gives plugins full Drizzle schema management (create, diff, alter) while keeping them isolated from core and each other.
+
+### How It Works
+
+1. The core `drizzle.config.js` only manages core tables (e.g., `clients`) via `tablesFilter`
+2. Each plugin that needs tables calls `pushPluginSchema()` during `initialize()`
+3. The helper writes a temporary drizzle config scoped to the plugin's declared tables
+4. `drizzle-kit push --force` runs against that config
+5. The `tablesFilter` ensures the push can only see and modify the plugin's own tables
+
+This means:
+- Plugins can **create**, **alter**, and **evolve** their tables using standard Drizzle schema definitions
+- `--force` is safe because the filter prevents any cross-plugin or cross-core interference
+- New plugins automatically get their tables created on first boot
+- Schema changes in plugin updates are applied automatically
+
+### Usage
+
+```typescript
+// In your plugin's db.ts or initialize():
+import { pushPluginSchema } from '../../../plugins/schema-push.ts';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+await pushPluginSchema({
+    schemaPath: join(__dirname, 'schema.ts'),
+    tables: ['my_table', 'my_other_table'],
+    databaseUrl: process.env.DATABASE_URL!,
+});
+```
+
+### Options
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `schemaPath` | `string \| string[]` | Absolute path(s) to the plugin's Drizzle schema file(s) |
+| `tables` | `string[]` | Table names this plugin owns (used as `tablesFilter`) |
+| `databaseUrl` | `string` | MySQL connection URL |
+
+### Example: simple-sql Provider
+
+The built-in `simple-sql` provider manages its `users` and `confirmation_codes` tables this way:
+
+```typescript
+// simple-sql/db.ts
+await pushPluginSchema({
+    schemaPath: join(__dirname, 'schema.ts'),
+    tables: ['users', 'confirmation_codes'],
+    databaseUrl,
+});
+```
+
+The schema is defined in standard Drizzle format (`schema.ts`), and any changes to the schema will be applied automatically on the next server start.
