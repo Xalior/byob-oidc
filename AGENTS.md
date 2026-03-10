@@ -90,15 +90,16 @@ examples/
 
 ## Testing
 
-### E2E Tests (WebDriverIO)
+### E2E Tests (Playwright)
 
-Tests run against a live server using Safari. The test suite:
+Tests run against a live server using Chromium via a Dockerized Browserless container (auto-managed by global setup/teardown). The test suite:
 - Connects directly to the MySQL database to set up test data
 - Connects directly to Redis to read MFA codes for automated login
-- Uses page objects in `test/pageobjects/`
-- Config: `wdio.conf.ts`, base URL: `https://dev.id.nextbestnetwork.com`
+- Uses page objects in `e2e/pages/`
+- Config: `playwright.config.ts`, base URL: `https://dev.id.nextbestnetwork.com`
+- Browser: Dockerized Chromium (`ghcr.io/browserless/chromium`) on port 3033
 
-**To run:** Start the dev server first, then `pnpm test`
+**To run:** Start the dev server first, then `pnpm test` (Docker must be running)
 
 Test suites: `auth` (login, logout, failures, lost_password, lockout), `registration` (failures)
 
