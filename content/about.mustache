@@ -1,54 +1,31 @@
 <h2>{{site_name}}</h2>
 <p>
-    <strong>{{site_name}}</strong> is a Closed-Circuit OpenID Connect (OIDC) provider, purpose-built for
-    the Spectrum Next ecosystem.
+    <strong>{{site_name}}</strong> is powered by
+    <a href="https://github.com/Xalior/byob-oidc" target="_blank" rel="noopener noreferrer">BYOB-OIDC</a>,
+    an open-source, plugin-based OpenID Connect identity provider.
 </p>
 <p>
-    Designed to operate on-device and off-cloud, {{site_name}} enables secure, privacy-preserving identity
-    management in a retro environment. It supports authentication, authorization, and single
-    identity federation between autonomous services and individuals.
+    BYOB-OIDC provides secure authentication, authorization, and single identity federation
+    through a modular plugin architecture. Every major subsystem &mdash; user storage, session
+    management, multi-factor authentication, and UI theming &mdash; is a swappable plugin.
 </p>
 
-<h4>Why {{site_name}}?</h4>
+<h4>Features</h4>
 <ul>
-    <li><strong>Device-Centric:</strong> Optimized to support 8-bit identity management and issuance.</li>
-    <li><strong>Privacy by Design:</strong> Claims are uniform, explicit, and user-concentric by design.</li>
-    <li><strong>Federation-Ready:</strong> Compatible with public key trust models for service-to-service interoperability.</li>
-    <li><strong>Auditable and Observable:</strong> Built-in telemetry for identity flows and verifiable events.</li>
+    <li><strong>Standards-Compliant:</strong> Full OpenID Connect provider built on <code>oidc-provider</code>.</li>
+    <li><strong>Plugin Architecture:</strong> Swap providers, sessions, MFA, themes, and extensions without changing core code.</li>
+    <li><strong>Privacy by Design:</strong> Self-hosted, no third-party dependencies for core identity flows.</li>
+    <li><strong>Federation-Ready:</strong> Issue and verify tokens for service-to-service interoperability.</li>
 </ul>
 
-<h4>Use Cases</h4>
-<ul>
-    <li>Identity bootstrapping on previously authenticated devices (coming first)</li>
-    <li>Federated logins between supported apps and services (coming soon)</li>
-    <li>Credential exchange for scoped access across domains (coming later)</li>
-    <li>Minimal identity layer for experimental protocols (in active development now)</li>
-</ul>
-
-<h4>Who Is It For?</h4>
-<ul>
-    <li>Developers targeting a connected Spectrum Next</li>
-    <li>Designers of distributed 8bit applications</li>
-    <li>Application suites needing portable identity</li>
-    <li>End-users and Game-players</li>
-</ul>
-
-<h4>Who's Already Using It?</h4>
-<p>No active client deployments are available at this time (except this website which itself uses
-    {{site_name}} to manage its own profiles) - but in current active development, {{site_name}} is being used by:</p>
-<ul>
-    <li>ZXN-QR</li>
-    <li>Webbit.cloud</li>
-    <li>Sir. Clive Sinclairbot</li>
-    <li>GETIT v2</li>
-</ul>
-
-<h4>Source Code & Contributions</h4>
+<h4>Learn More</h4>
 <p>
-    {{site_name}} is open source and maintained by Xalior.<br />
-    View the source:
-    <a href="https://github.com/Xalior/nbn-oidc-provider" target="_blank" rel="noopener noreferrer">
-        github.com/Xalior/nbn-oidc-provider
-    </a><br />
-    Pull requests, issues, and discussion are welcome.
+    View the source and documentation:
+    <a href="https://github.com/Xalior/byob-oidc" target="_blank" rel="noopener noreferrer">
+        github.com/Xalior/byob-oidc
+    </a>
+</p>
+<p>
+    To customise this page, place an <code>about.mustache</code> file in your data content
+    directory (<code>/data/content/</code>).
 </p>

@@ -11,7 +11,7 @@ fi
 
 # Push schema changes to the database
 # This will create tables if they don't exist and update them if they do
-echo "Pushing schema changes to the database..."
+echo "Pushing core schema changes to the database..."
 pnpm run db:push --force
 
 # Run migrations to apply any pending migrations

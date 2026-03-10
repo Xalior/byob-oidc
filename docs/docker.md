@@ -31,7 +31,7 @@ docker-compose up
 
 ```bash
 mkdir -p data
-docker run -p 5000:5000 -v $(pwd)/data:/data byob-oidc
+docker run -p 5000:5000 -v $(pwd)/data:/app/data byob-oidc
 ```
 
 ## Environment Variables
@@ -42,7 +42,7 @@ Key variables for Docker deployment:
 
 ```bash
 docker run -p 5000:5000 \
-  -v $(pwd)/data:/data \
+  -v $(pwd)/data:/app/data \
   -e NODE_ENV=production \
   -e HOSTNAME=id.example.com \
   -e SESSION_SECRET=your-secure-secret \
@@ -89,6 +89,9 @@ The `/data` directory is mounted as a Docker volume and contains:
 ```
 /data/
   jwks.json          # JSON Web Key Set (generated with pnpm run generate-jwks)
+  content/           # Content overrides (Mustache partials)
+    about.mustache   # Custom about page (overrides built-in default)
+    tos.mustache     # Custom terms of service (overrides built-in default)
   plugins/           # External plugin bundles
     providers/       # Provider plugins (e.g., example-csv/)
     sessions/        # Session plugins
@@ -96,6 +99,21 @@ The `/data` directory is mounted as a Docker volume and contains:
     mfa/             # MFA plugins (e.g., example-captcha/)
     extensions/      # Extension plugins
 ```
+
+### Custom Content
+
+Site-specific content pages (About, Terms of Service) can be customised by placing Mustache partial files in `/data/content/`. These override the generic defaults shipped with BYOB-OIDC.
+
+```bash
+# Override the about page with your own content
+mkdir -p data/content
+cat > data/content/about.mustache << 'EOF'
+<h2>{{site_name}}</h2>
+<p>Welcome to our identity service, powered by BYOB-OIDC.</p>
+EOF
+```
+
+Files not present in `/data/content/` fall back to the built-in defaults in `content/`. The `{{site_name}}` Mustache variable is available in all partials.
 
 ### External Plugins
 
@@ -114,7 +132,7 @@ Then configure via environment variables:
 
 ```bash
 docker run -p 5000:5000 \
-  -v $(pwd)/data:/data \
+  -v $(pwd)/data:/app/data \
   -e PROVIDER=example-csv \
   -e MFA=example-captcha \
   -e CSV_USERS_FILE=/data/users.csv \
@@ -139,7 +157,7 @@ docker push your-registry.com/byob-oidc
 
 # On target server:
 docker pull your-registry.com/byob-oidc
-docker run -p 5000:5000 -v /path/to/data:/data your-registry.com/byob-oidc
+docker run -p 5000:5000 -v /path/to/data:/app/data your-registry.com/byob-oidc
 ```
 
 ### Option 3: Export/Import
@@ -148,7 +166,7 @@ docker run -p 5000:5000 -v /path/to/data:/data your-registry.com/byob-oidc
 docker save -o byob-oidc.tar byob-oidc
 # Transfer to target server
 docker load -i byob-oidc.tar
-docker run -p 5000:5000 -v /path/to/data:/data byob-oidc
+docker run -p 5000:5000 -v /path/to/data:/app/data byob-oidc
 ```
 
 ## Security
