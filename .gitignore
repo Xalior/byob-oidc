@@ -17,3 +17,4 @@ guidelines.txt
 .env
 docker-compose.yml
 .output.txt
+test-results/
