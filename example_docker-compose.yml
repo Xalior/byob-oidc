@@ -1,10 +1,10 @@
 services:
-  nbn-oidc-provider:
+  byob-oidc:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:5000:5000"
     volumes:
       - ./data:/app/data
     environment:
@@ -12,4 +12,5 @@ services:
       # Database configuration - uncomment and modify for your environment
       # - DATABASE_URL=mysql://user:password@host:port/database
       # - CACHE_URL=redis://host:port/
+      # - SMTP_HOST=smtp.example.com
     restart: unless-stopped

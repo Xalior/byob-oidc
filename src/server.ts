@@ -1,6 +1,6 @@
 import * as path from 'node:path';
 import * as url from 'node:url';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, copyFileSync } from 'node:fs';
 import cors from 'cors';
 import express, { Request, Response, NextFunction, Application } from 'express';
 import session from 'express-session';
@@ -25,7 +25,32 @@ import passport from 'passport';
 import { Strategy } from 'openid-client/passport';
 import type { User as AccountUser } from './plugins-available/providers/simple-sql/account.js';
 import * as http from "node:http";
+import { tmpdir } from 'node:os';
 
+/**
+ * Merge default content partials with data-volume overrides.
+ * Copies all files from defaultDir, then overlays any files from overrideDir.
+ * Returns a temp directory containing the merged result.
+ */
+function mergeContentDirs(defaultDir: string, overrideDir: string): string {
+    const merged = mkdtempSync(path.join(tmpdir(), 'byob-content-'));
+
+    // Copy defaults
+    if (existsSync(defaultDir)) {
+        for (const file of readdirSync(defaultDir)) {
+            copyFileSync(path.join(defaultDir, file), path.join(merged, file));
+        }
+    }
+
+    // Overlay with data-volume overrides
+    if (existsSync(overrideDir)) {
+        for (const file of readdirSync(overrideDir)) {
+            copyFileSync(path.join(overrideDir, file), path.join(merged, file));
+        }
+    }
+
+    return merged;
+}
 
 
 // Extend Express Request type to include user and flash
@@ -159,7 +184,10 @@ try {
     app.use(passport.authenticate('session'));
 
     // ── 6. Template engine ─────────────────────────────────────────────
-    const contentDir = path.join(__dirname, '../content');
+    // Merge default content partials with data-volume overrides
+    const defaultContentDir = path.join(__dirname, '../content');
+    const dataContentDir = path.join(__dirname, '../data/content');
+    const contentDir = mergeContentDirs(defaultContentDir, dataContentDir);
     app.engine('mustache', mustacheExpress(contentDir));
     app.set('view engine', 'mustache');
 

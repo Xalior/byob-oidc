@@ -39,7 +39,7 @@ const plugin: ProviderPlugin = {
         const passwordSalt = parseInt(process.env.PASSWORD_SALT || '11', 10);
         setPasswordSalt(passwordSalt);
 
-        initializeDb(databaseUrl);
+        await initializeDb(databaseUrl);
         initializeEmail(config);
 
         console.log(`Simple SQL provider initialized (db: ${databaseUrl.replace(/\/\/.*@/, '//***@')})`);
