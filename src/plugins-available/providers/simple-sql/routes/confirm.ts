@@ -1,8 +1,8 @@
 import { users, confirmation_codes } from "../schema.ts";
+import { clients } from '../../../../db/schema.ts';
 import { getDb } from "../db.ts";
 import { eq, and, gte } from "drizzle-orm";
 import { Request, Response, NextFunction, Application } from 'express';
-import { Client } from '../../../../models/clients.ts';
 
 export default (app: Application): void => {
     app.get('/confirm', async (req: Request, res: Response, next: NextFunction) => {
@@ -55,12 +55,19 @@ export default (app: Application): void => {
                     .limit(1))[0] : null;
 
                 if (confirmedUser?.registered_from_client_id) {
-                    const originClient = await Client.findByClientId(confirmedUser.registered_from_client_id);
-                    if (originClient && originClient.redirect_uris.length > 0) {
-                        // Strip the OIDC callback path to get the site root
-                        const redirectUrl = new URL(originClient.redirect_uris[0]);
-                        req.flash('success', 'Account confirmed - redirecting you back');
-                        return res.redirect(redirectUrl.origin);
+                    const originClient = (await getDb().select()
+                        .from(clients)
+                        .where(eq(clients.id, confirmedUser.registered_from_client_id))
+                        .limit(1))[0];
+
+                    if (originClient) {
+                        const redirectUris: string[] = JSON.parse(originClient.redirect_uris);
+                        if (redirectUris.length > 0) {
+                            // Strip the OIDC callback path to get the site root
+                            const redirectUrl = new URL(redirectUris[0]);
+                            req.flash('success', 'Account confirmed - redirecting you back');
+                            return res.redirect(redirectUrl.origin);
+                        }
                     }
                 }
 

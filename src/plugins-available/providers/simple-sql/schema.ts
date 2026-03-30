@@ -1,4 +1,5 @@
 import { mysqlTable, text, int, timestamp } from 'drizzle-orm/mysql-core';
+import { clients } from '../../../db/schema.ts';
 
 export const users = mysqlTable('users', {
     id: int('id').primaryKey().autoincrement(),
@@ -11,7 +12,7 @@ export const users = mysqlTable('users', {
     display_name: text('display_name').notNull(),
     confirmation_attempts: int('confirmation_attempts').default(0),
     login_attempts: int('login_attempts').notNull().default(0),
-    registered_from_client_id: text('registered_from_client_id'),
+    registered_from_client_id: int('registered_from_client_id').references(() => clients.id),
     confirmation_sent: timestamp('confirmation_sent'),
     confirmed_at: timestamp('confirmed_at'),
     created_at: timestamp('created_at').notNull().defaultNow(),

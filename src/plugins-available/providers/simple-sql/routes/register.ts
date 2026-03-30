@@ -1,5 +1,6 @@
 import { check, validationResult, matchedData } from 'express-validator';
 import { users, confirmation_codes } from '../schema.ts';
+import { clients } from '../../../../db/schema.ts';
 import { getDb } from "../db.ts";
 import { eq, sql } from "drizzle-orm";
 import { sendConfirmationEmail} from "../email.ts";
@@ -109,15 +110,22 @@ export default (app: Application): void => {
                 // Check for fresh registration origin (< 30 min) from OIDC client
                 const origin = req.session?.__registration_origin;
                 const ORIGIN_MAX_AGE_MS = 30 * 60 * 1000;
-                const registeredFromClientId = origin && (Date.now() - origin.timestamp < ORIGIN_MAX_AGE_MS)
+                const originClientId = origin && (Date.now() - origin.timestamp < ORIGIN_MAX_AGE_MS)
                     ? origin.client_id : 'SELF';
+
+                // Resolve client_id string to integer FK
+                const clientRow = (await getDb().select({ id: clients.id })
+                    .from(clients)
+                    .where(eq(clients.client_id, originClientId))
+                    .limit(1))[0];
+                const registeredFromClientPk = clientRow?.id ?? null;
 
                 const new_user_id = (await getDb().insert(users).values({
                     email: reg_form.email,
                     account_id: generateAccountId(),
                     password: await hashAccountPassword(reg_form.password_1),
                     display_name: reg_form.display_name,
-                    registered_from_client_id: registeredFromClientId,
+                    registered_from_client_id: registeredFromClientPk,
                 }).$returningId())[0].id;
 
                 const confirmation_code_id = (await getDb().insert(confirmation_codes).values({

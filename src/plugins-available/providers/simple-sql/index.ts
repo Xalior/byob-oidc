@@ -3,10 +3,20 @@ import { PluginConfig } from '../../../plugins/types.ts';
 import { Account, setPasswordSalt, generateAccountId, hashAccountPassword } from './account.ts';
 import { getDb } from './db.ts';
 import { users } from './schema.ts';
+import { clients } from '../../../db/schema.ts';
 import { eq, and } from 'drizzle-orm';
 import { initializeDb } from './db.ts';
 import { initializeEmail } from './email.ts';
 import { Request, Application } from 'express';
+
+/** Resolve a client_id string to the integer PK in the clients table. Returns null if not found. */
+async function resolveClientPk(clientId: string): Promise<number | null> {
+    const row = (await getDb().select({ id: clients.id })
+        .from(clients)
+        .where(eq(clients.client_id, clientId))
+        .limit(1))[0];
+    return row?.id ?? null;
+}
 
 import register from './routes/register.ts';
 import confirm from './routes/confirm.ts';
@@ -98,13 +108,17 @@ const plugin: ProviderPlugin = {
         const accountId = generateAccountId();
         const hashedPassword = await hashAccountPassword(data.password);
 
+        // Resolve client_id string to integer FK (falls back to SELF, then null)
+        const clientPk = await resolveClientPk(data.registeredFromClientId || 'SELF')
+            ?? await resolveClientPk('SELF');
+
         await getDb().insert(users).values({
             email: data.email,
             account_id: accountId,
             password: hashedPassword,
             display_name: data.displayName,
             verified: 1, // Auto-verified: email was already confirmed via challenge link
-            registered_from_client_id: data.registeredFromClientId || 'SELF',
+            registered_from_client_id: clientPk,
         });
 
         const account = new Account(accountId, {
