@@ -132,9 +132,11 @@ try {
 
     // Body parsing for app routes (oidc-provider has its own)
     app.use(
-        ['/register', '/profile', '/lost_password', '/reset_password', '/reconfirm', '/interaction'],
+        ['/register', '/profile', '/lost_password', '/reset_password', '/reconfirm', '/interaction',
+         '/flashback/approve', '/flashback/register'],
         express.urlencoded({ extended: true })
     );
+    app.use('/flashback/init', express.json());
 
     // CSRF protection
     const csrfProtection = csrf({
@@ -144,7 +146,8 @@ try {
 
     app.use((req: Request, res: Response, next: NextFunction) => {
         if (req.path.startsWith('/token') ||
-            req.path.startsWith('/session/end/confirm')
+            req.path.startsWith('/session/end/confirm') ||
+            req.path === '/flashback/init'
         ) {
             next();
         } else {
