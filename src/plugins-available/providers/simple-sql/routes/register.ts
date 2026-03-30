@@ -110,7 +110,7 @@ export default (app: Application): void => {
                 const origin = req.session?.__registration_origin;
                 const ORIGIN_MAX_AGE_MS = 30 * 60 * 1000;
                 const registeredFromClientId = origin && (Date.now() - origin.timestamp < ORIGIN_MAX_AGE_MS)
-                    ? origin.client_id : null;
+                    ? origin.client_id : 'SELF';
 
                 const new_user_id = (await getDb().insert(users).values({
                     email: reg_form.email,

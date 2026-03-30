@@ -104,7 +104,7 @@ const plugin: ProviderPlugin = {
             password: hashedPassword,
             display_name: data.displayName,
             verified: 1, // Auto-verified: email was already confirmed via challenge link
-            registered_from_client_id: data.registeredFromClientId || null,
+            registered_from_client_id: data.registeredFromClientId || 'SELF',
         });
 
         const account = new Account(accountId, {
