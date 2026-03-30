@@ -11,6 +11,7 @@ export const users = mysqlTable('users', {
     display_name: text('display_name').notNull(),
     confirmation_attempts: int('confirmation_attempts').default(0),
     login_attempts: int('login_attempts').notNull().default(0),
+    registered_from_client_id: text('registered_from_client_id'),
     confirmation_sent: timestamp('confirmation_sent'),
     confirmed_at: timestamp('confirmed_at'),
     created_at: timestamp('created_at').notNull().defaultNow(),

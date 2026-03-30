@@ -86,7 +86,7 @@ const plugin: ProviderPlugin = {
         return wrapAccount(account);
     },
 
-    async createAccount(data: { email: string; displayName: string; password: string }): Promise<OIDCAccount | null> {
+    async createAccount(data: { email: string; displayName: string; password: string; registeredFromClientId?: string }): Promise<OIDCAccount | null> {
         // Check if user already exists
         const existing = (await getDb().select()
             .from(users)
@@ -104,6 +104,7 @@ const plugin: ProviderPlugin = {
             password: hashedPassword,
             display_name: data.displayName,
             verified: 1, // Auto-verified: email was already confirmed via challenge link
+            registered_from_client_id: data.registeredFromClientId || null,
         });
 
         const account = new Account(accountId, {

@@ -77,6 +77,8 @@ declare module 'express-session' {
         destination_path: string;
         remember_me: boolean;
         __mfa_accountId?: string;
+        /** Tracks which OIDC client sent the user, for registration-origin tracking */
+        __registration_origin?: { client_id: string; timestamp: number };
     }
 }
 

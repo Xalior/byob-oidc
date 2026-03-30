@@ -45,7 +45,7 @@ export interface ProviderPlugin extends Plugin {
      * Returns the created account on success, null on failure.
      * Used by extensions that handle registration outside the normal flow.
      */
-    createAccount?(data: { email: string; displayName: string; password: string }): Promise<OIDCAccount | null>;
+    createAccount?(data: { email: string; displayName: string; password: string; registeredFromClientId?: string }): Promise<OIDCAccount | null>;
 
     /**
      * Does this provider handle its own login UI externally?

@@ -106,11 +106,18 @@ export default (app: Application): void => {
 
                 const reg_form = matchedData(req, { includeOptionals: true });
 
+                // Check for fresh registration origin (< 30 min) from OIDC client
+                const origin = req.session?.__registration_origin;
+                const ORIGIN_MAX_AGE_MS = 30 * 60 * 1000;
+                const registeredFromClientId = origin && (Date.now() - origin.timestamp < ORIGIN_MAX_AGE_MS)
+                    ? origin.client_id : null;
+
                 const new_user_id = (await getDb().insert(users).values({
                     email: reg_form.email,
                     account_id: generateAccountId(),
                     password: await hashAccountPassword(reg_form.password_1),
                     display_name: reg_form.display_name,
+                    registered_from_client_id: registeredFromClientId,
                 }).$returningId())[0].id;
 
                 const confirmation_code_id = (await getDb().insert(confirmation_codes).values({

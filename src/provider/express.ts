@@ -68,6 +68,9 @@ export default (app: Application, provider: OIDCProvider): void => {
 
             console.log("Login Form Session: ", req.session, new Date().toISOString());
 
+            // Track which OIDC client sent the user (for registration-origin tracking)
+            req.session.__registration_origin = { client_id: params.client_id, timestamp: Date.now() };
+
             switch (prompt.name) {
                 case 'login': {
                     return res.render('login', {

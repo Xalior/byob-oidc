@@ -34,6 +34,8 @@ interface FlashbackChallenge {
     status: 'pending' | 'approved' | 'denied';
     /** Unix timestamp when the challenge was created */
     createdAt: number;
+    /** The OIDC client_id that initiated this challenge (for registration-origin tracking) */
+    initiatingClientId: string;
 }
 
 /** Payload sent to FlashBack via signed callback on approval. */
@@ -136,18 +138,18 @@ async function checkRateLimit(email: string): Promise<boolean> {
  * FlashBack OIDC client's client_id and client_secret via HTTP Basic Auth.
  *
  * @param req - Express request with Authorization header
- * @returns true if credentials are valid
+ * @returns The authenticated client_id, or null if credentials are invalid
  */
-async function verifyClientCredentials(req: Request): Promise<boolean> {
+async function verifyClientCredentials(req: Request): Promise<string | null> {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Basic ')) {
-        return false;
+        return null;
     }
 
     const decoded = Buffer.from(authHeader.slice(6), 'base64').toString('utf-8');
     const colonIndex = decoded.indexOf(':');
     if (colonIndex === -1) {
-        return false;
+        return null;
     }
 
     const clientId = decoded.slice(0, colonIndex);
@@ -155,11 +157,11 @@ async function verifyClientCredentials(req: Request): Promise<boolean> {
 
     const client = await Client.findByClientId(clientId);
     if (!client) {
-        return false;
+        return null;
     }
 
     // Compare client secret (stored as plain text in the clients table)
-    return client.client_secret === clientSecret;
+    return client.client_secret === clientSecret ? clientId : null;
 }
 
 // ── Callback dispatcher ──────────────────────────────────────────────────
@@ -381,8 +383,9 @@ const plugin: ExtensionPlugin = {
         // Rate-limited to 5 requests per minute per email.
         app.post('/flashback/init', async (req: Request, res: Response, next: NextFunction) => {
             try {
-                // Verify client credentials
-                if (!(await verifyClientCredentials(req))) {
+                // Verify client credentials (returns client_id or null)
+                const authenticatedClientId = await verifyClientCredentials(req);
+                if (!authenticatedClientId) {
                     return res.status(401).json({ error: 'invalid_client', message: 'Invalid client credentials' });
                 }
 
@@ -420,6 +423,7 @@ const plugin: ExtensionPlugin = {
                     userExists,
                     status: 'pending',
                     createdAt: Date.now(),
+                    initiatingClientId: authenticatedClientId,
                 };
 
                 // Store in session cache with TTL
@@ -652,6 +656,7 @@ const plugin: ExtensionPlugin = {
                     email: challenge.email,
                     displayName: display_name.trim(),
                     password,
+                    registeredFromClientId: challenge.initiatingClientId,
                 });
 
                 if (!account) {

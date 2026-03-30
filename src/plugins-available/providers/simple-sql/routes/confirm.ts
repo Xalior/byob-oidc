@@ -2,6 +2,7 @@ import { users, confirmation_codes } from "../schema.ts";
 import { getDb } from "../db.ts";
 import { eq, and, gte } from "drizzle-orm";
 import { Request, Response, NextFunction, Application } from 'express';
+import { Client } from '../../../../models/clients.ts';
 
 export default (app: Application): void => {
     app.get('/confirm', async (req: Request, res: Response, next: NextFunction) => {
@@ -45,6 +46,23 @@ export default (app: Application): void => {
                 .where(
                     eq(confirmation_codes.confirmation_code, query_string)
                 );
+
+                // Check if user registered from a specific OIDC client — redirect them back
+                const userId = confirmation_code[0].user_id;
+                const confirmedUser = userId ? (await getDb().select()
+                    .from(users)
+                    .where(eq(users.id, userId))
+                    .limit(1))[0] : null;
+
+                if (confirmedUser?.registered_from_client_id) {
+                    const originClient = await Client.findByClientId(confirmedUser.registered_from_client_id);
+                    if (originClient && originClient.redirect_uris.length > 0) {
+                        // Strip the OIDC callback path to get the site root
+                        const redirectUrl = new URL(originClient.redirect_uris[0]);
+                        req.flash('success', 'Account confirmed - redirecting you back');
+                        return res.redirect(redirectUrl.origin);
+                    }
+                }
 
                 req.flash('success', 'Account confirmed - please login to continue');
 
