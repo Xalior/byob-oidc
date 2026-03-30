@@ -1,6 +1,9 @@
 import { ProviderPlugin, OIDCAccount } from '../../../plugins/provider/interface.ts';
 import { PluginConfig } from '../../../plugins/types.ts';
-import { Account, setPasswordSalt } from './account.ts';
+import { Account, setPasswordSalt, generateAccountId, hashAccountPassword } from './account.ts';
+import { getDb } from './db.ts';
+import { users } from './schema.ts';
+import { eq, and } from 'drizzle-orm';
 import { initializeDb } from './db.ts';
 import { initializeEmail } from './email.ts';
 import { Request, Application } from 'express';
@@ -61,6 +64,54 @@ const plugin: ProviderPlugin = {
         const account = await Account.findAccount(null, accountId);
         if (!account) return { sub: accountId };
         return account.claims(use, scope);
+    },
+
+    async findByEmail(email: string): Promise<OIDCAccount | null> {
+        const user = (await getDb().select()
+            .from(users)
+            .where(and(
+                eq(users.email, email),
+                eq(users.verified, 1),
+                eq(users.suspended, 0),
+            ))
+            .limit(1))[0];
+
+        if (!user) return null;
+
+        const account = new Account(user.account_id, {
+            email: user.email,
+            display_name: user.display_name,
+            user: user,
+        });
+        return wrapAccount(account);
+    },
+
+    async createAccount(data: { email: string; displayName: string; password: string }): Promise<OIDCAccount | null> {
+        // Check if user already exists
+        const existing = (await getDb().select()
+            .from(users)
+            .where(eq(users.email, data.email))
+            .limit(1))[0];
+
+        if (existing) return null;
+
+        const accountId = generateAccountId();
+        const hashedPassword = await hashAccountPassword(data.password);
+
+        await getDb().insert(users).values({
+            email: data.email,
+            account_id: accountId,
+            password: hashedPassword,
+            display_name: data.displayName,
+            verified: 1, // Auto-verified: email was already confirmed via challenge link
+        });
+
+        const account = new Account(accountId, {
+            email: data.email,
+            display_name: data.displayName,
+            user: { id: 0, account_id: accountId, email: data.email, password: '', display_name: data.displayName, verified: 1, suspended: 0, login_attempts: 0 },
+        });
+        return wrapAccount(account);
     },
 
     getRoutes(app: Application): void {

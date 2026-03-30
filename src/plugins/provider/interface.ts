@@ -34,6 +34,20 @@ export interface ProviderPlugin extends Plugin {
     getRoutes?(app: Application): void;
 
     /**
+     * Look up an account by email address (without verifying credentials).
+     * Returns the account if found and eligible, null otherwise.
+     * Used by extensions that need to check if a user exists (e.g. FlashBack).
+     */
+    findByEmail?(email: string): Promise<OIDCAccount | null>;
+
+    /**
+     * Programmatically create a new user account.
+     * Returns the created account on success, null on failure.
+     * Used by extensions that handle registration outside the normal flow.
+     */
+    createAccount?(data: { email: string; displayName: string; password: string }): Promise<OIDCAccount | null>;
+
+    /**
      * Does this provider handle its own login UI externally?
      * If true, authenticate() is NOT called by core interaction routes.
      * Instead, core calls getExternalLoginUrl() and the provider handles
