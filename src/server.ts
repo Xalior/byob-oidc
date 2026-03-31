@@ -264,6 +264,12 @@ try {
             // Clear any stale flash messages from prior failed attempts
             req.flash('error');
             req.flash('warning');
+            // Honor post-login redirect if set (e.g. by ensureAuthenticated or extensions)
+            const destination = req.session?.destination_path;
+            if (destination) {
+                delete req.session.destination_path;
+                return res.redirect(destination);
+            }
             res.redirect('/');
         }
     );

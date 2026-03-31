@@ -461,7 +461,9 @@ const plugin: ExtensionPlugin = {
         });
 
         // ── GET /flashback/approve/:challengeId ───────────────────────────
-        // Browser: show approval page for an existing user.
+        // Browser: user must be fully authenticated (password + MFA) first.
+        // If not logged in, redirect to /login — after login, callback
+        // redirects back here via session.destination_path.
         app.get('/flashback/approve/:challengeId', async (req: Request, res: Response, next: NextFunction) => {
             try {
                 const { challengeId } = req.params;
@@ -476,18 +478,36 @@ const plugin: ExtensionPlugin = {
                     `));
                 }
 
+                // Require full authentication — redirect to normal login flow
+                if (!req.isAuthenticated || !req.isAuthenticated()) {
+                    req.session.destination_path = req.originalUrl;
+                    return res.redirect('/login');
+                }
+
+                // Verify the logged-in user matches the challenge email
+                const loggedInEmail = (req.user as any)?.email;
+                if (loggedInEmail && loggedInEmail !== challenge.email) {
+                    return res.status(403).send(renderPage('Wrong Account', `
+                        <h1>Wrong Account</h1>
+                        <p>You are logged in as <strong>${loggedInEmail}</strong>, but this approval is for <strong>${challenge.email}</strong>.</p>
+                        <p>Please log out and log in with the correct account.</p>
+                    `));
+                }
+
+                // User is authenticated — show approval page
+                const csrfToken = typeof req.csrfToken === 'function' ? req.csrfToken() : '';
                 return res.send(renderPage('Approve Login', `
-                    <h1>Approve FlashBack Login</h1>
-                    <p>A device is trying to log in to FlashBack as <strong>${challenge.email}</strong>.</p>
-                    <p>If this was you, click <strong>Approve</strong> to log in on your device.</p>
+                    <h1>Approve Login</h1>
+                    <p>A device is requesting to log in as <strong>${challenge.email}</strong>.</p>
+                    <p>You have verified your identity. Approve to activate the session on your device.</p>
                     <div class="actions">
                         <form method="POST" style="display:inline">
-                            <input type="hidden" name="_csrf" value="${req.csrfToken()}">
+                            <input type="hidden" name="_csrf" value="${csrfToken}">
                             <input type="hidden" name="action" value="approve">
                             <button type="submit" class="btn btn-primary">Approve</button>
                         </form>
                         <form method="POST" style="display:inline">
-                            <input type="hidden" name="_csrf" value="${req.csrfToken()}">
+                            <input type="hidden" name="_csrf" value="${csrfToken}">
                             <input type="hidden" name="action" value="deny">
                             <button type="submit" class="btn btn-danger">Deny</button>
                         </form>
@@ -499,9 +519,14 @@ const plugin: ExtensionPlugin = {
         });
 
         // ── POST /flashback/approve/:challengeId ──────────────────────────
-        // Browser: handle approval or denial from the approval page.
+        // Browser: handle approval or denial. User MUST be authenticated.
         app.post('/flashback/approve/:challengeId', async (req: Request, res: Response, next: NextFunction) => {
             try {
+                // Must be authenticated
+                if (!req.isAuthenticated || !req.isAuthenticated()) {
+                    return res.redirect(`/flashback/approve/${req.params.challengeId}`);
+                }
+
                 const { challengeId } = req.params;
                 const { action } = req.body;
                 const session = getSession();
@@ -514,45 +539,55 @@ const plugin: ExtensionPlugin = {
                     `));
                 }
 
+                // Verify logged-in user matches challenge
+                const loggedInEmail = (req.user as any)?.email;
+                if (loggedInEmail && loggedInEmail !== challenge.email) {
+                    return res.status(403).send(renderPage('Wrong Account', `
+                        <h1>Wrong Account</h1>
+                        <p>You are logged in as a different account than this approval is for.</p>
+                    `));
+                }
+
                 if (action === 'approve') {
-                    // Look up the user to get their account ID
-                    const provider = getProvider();
-                    let userId = '';
-                    if (provider.findByEmail) {
-                        const account = await provider.findByEmail(challenge.email);
-                        if (account) {
-                            userId = account.accountId;
-                        }
-                    }
+                    // User is authenticated — use their account ID
+                    const userId = (req.user as any)?.sub || '';
 
                     if (!userId) {
+                        // Fallback: look up by email
+                        const provider = getProvider();
+                        if (provider.findByEmail) {
+                            const account = await provider.findByEmail(challenge.email);
+                            if (account) {
+                                challenge.status = 'approved';
+                                await sendApprovalCallback(challenge, account.accountId);
+                                await session.del(challengeKey(challengeId));
+                                return res.send(renderPage('Login Approved', `
+                                    <div class="success">Login approved!</div>
+                                    <h1>Done!</h1>
+                                    <p>Your device is now logged in.</p>
+                                    <p class="muted">You can close this tab.</p>
+                                `));
+                            }
+                        }
                         return res.status(500).send(renderPage('Error', `
                             <h1>Something went wrong</h1>
-                            <p>Could not find your account. Please try again.</p>
+                            <p>Could not resolve your account. Please try again.</p>
                         `));
                     }
 
-                    // Update challenge status
                     challenge.status = 'approved';
-                    await session.set(challengeKey(challengeId), challenge, challengeTtl);
-
-                    // Send signed callback to FlashBack
                     await sendApprovalCallback(challenge, userId);
-
-                    // Delete the challenge now that it's been used
                     await session.del(challengeKey(challengeId));
 
                     return res.send(renderPage('Login Approved', `
                         <div class="success">Login approved!</div>
                         <h1>Done!</h1>
-                        <p>Your device is now logged in to FlashBack.</p>
+                        <p>Your device is now logged in.</p>
                         <p class="muted">You can close this tab.</p>
                     `));
                 } else {
                     // Deny
                     challenge.status = 'denied';
-                    await session.set(challengeKey(challengeId), challenge, challengeTtl);
-
                     await sendDenialCallback(challenge);
                     await session.del(challengeKey(challengeId));
 
