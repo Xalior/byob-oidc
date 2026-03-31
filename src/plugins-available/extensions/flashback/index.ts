@@ -61,10 +61,6 @@ interface RateLimitEntry {
 
 // ── Configuration ─────────────────────────────────────────────────────────
 
-/** HMAC shared secret for signing callbacks (required) */
-let sharedSecret: string;
-/** Default callback URL (can be overridden per-request) */
-let defaultCallbackUrl: string;
 /** Challenge TTL in seconds (default: 900 = 15 minutes) */
 let challengeTtl: number;
 /** Stored plugin config for email/hostname access */
@@ -88,10 +84,10 @@ const rateLimitKey = (email: string): string => `flashback:ratelimit:${email.toL
  * Sign a JSON payload with HMAC-SHA256.
  *
  * The signature covers the canonical JSON serialization of the payload.
- * FlashBack verifies the signature using the same shared secret.
+ * The client verifies using its own client_secret (same key used here).
  *
  * @param payload - Object to sign (will be JSON-serialized)
- * @param secret - HMAC shared secret
+ * @param secret - The OIDC client's client_secret
  * @returns Hex-encoded HMAC-SHA256 signature
  */
 function signPayload(payload: object, secret: string): string {
@@ -131,16 +127,23 @@ async function checkRateLimit(email: string): Promise<boolean> {
 
 // ── Client credentials authentication ─────────────────────────────────────
 
+/** Result of successful client credentials verification. */
+interface AuthenticatedClient {
+    clientId: string;
+    clientSecret: string;
+}
+
 /**
  * Verify OIDC client credentials from HTTP Basic Auth header.
  *
- * The /flashback/init endpoint is server-to-server, authenticated with the
- * FlashBack OIDC client's client_id and client_secret via HTTP Basic Auth.
+ * Any registered OIDC client can use the FlashBack protocol — authentication
+ * uses the same client_id + client_secret as standard OIDC. The client_secret
+ * is also used to HMAC-sign callbacks, so the client can verify them.
  *
  * @param req - Express request with Authorization header
- * @returns The authenticated client_id, or null if credentials are invalid
+ * @returns The authenticated client info, or null if credentials are invalid
  */
-async function verifyClientCredentials(req: Request): Promise<string | null> {
+async function verifyClientCredentials(req: Request): Promise<AuthenticatedClient | null> {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Basic ')) {
         return null;
@@ -160,22 +163,41 @@ async function verifyClientCredentials(req: Request): Promise<string | null> {
         return null;
     }
 
-    // Compare client secret (stored as plain text in the clients table)
-    return client.client_secret === clientSecret ? clientId : null;
+    if (client.client_secret !== clientSecret) {
+        return null;
+    }
+
+    return { clientId, clientSecret };
+}
+
+/**
+ * Look up the client_secret for HMAC signing at callback time.
+ * Fetches fresh from the DB to avoid caching secrets in Redis.
+ */
+async function getClientSecret(clientId: string): Promise<string | null> {
+    const client = await Client.findByClientId(clientId);
+    return client?.client_secret ?? null;
 }
 
 // ── Callback dispatcher ──────────────────────────────────────────────────
 
 /**
- * POST an HMAC-signed approval callback to the FlashBack server.
+ * POST an HMAC-signed approval callback to the client's server.
  *
  * Sends a JSON payload to {callbackUrl}/api/sessions/{sessionId}/activate
- * with an X-Flashback-Signature header containing the HMAC-SHA256 signature.
+ * with an X-Flashback-Signature header. Signed with the client's own
+ * client_secret so the client can verify authenticity.
  *
  * @param challenge - The resolved challenge data
  * @param userId - The approved user's account ID
  */
 async function sendApprovalCallback(challenge: FlashbackChallenge, userId: string): Promise<void> {
+    const secret = await getClientSecret(challenge.initiatingClientId);
+    if (!secret) {
+        console.error(`FlashBack callback failed: client ${challenge.initiatingClientId} not found`);
+        return;
+    }
+
     const payload: ApprovalCallbackPayload = {
         userId,
         email: challenge.email,
@@ -184,7 +206,7 @@ async function sendApprovalCallback(challenge: FlashbackChallenge, userId: strin
         timestamp: Date.now(),
     };
 
-    const signature = signPayload(payload, sharedSecret);
+    const signature = signPayload(payload, secret);
     const url = `${challenge.callbackUrl}/api/sessions/${challenge.sessionId}/activate`;
 
     const response = await fetch(url, {
@@ -202,18 +224,24 @@ async function sendApprovalCallback(challenge: FlashbackChallenge, userId: strin
 }
 
 /**
- * POST an HMAC-signed denial callback to the FlashBack server.
+ * POST an HMAC-signed denial callback to the client's server.
  *
  * @param challenge - The denied challenge data
  */
 async function sendDenialCallback(challenge: FlashbackChallenge): Promise<void> {
+    const secret = await getClientSecret(challenge.initiatingClientId);
+    if (!secret) {
+        console.error(`FlashBack denial callback failed: client ${challenge.initiatingClientId} not found`);
+        return;
+    }
+
     const payload: DenialCallbackPayload = {
         sessionId: challenge.sessionId,
         action: 'deny',
         timestamp: Date.now(),
     };
 
-    const signature = signPayload(payload, sharedSecret);
+    const signature = signPayload(payload, secret);
     const url = `${challenge.callbackUrl}/api/sessions/${challenge.sessionId}/deny`;
 
     const response = await fetch(url, {
@@ -338,31 +366,19 @@ const plugin: ExtensionPlugin = {
     /**
      * Initialize the FlashBack extension.
      *
-     * Reads configuration from environment variables:
-     * - FLASHBACK_SHARED_SECRET (required) — HMAC shared secret for signing callbacks
-     * - FLASHBACK_CALLBACK_URL (required) — default callback URL for FlashBack server
+     * Optional environment variables:
      * - FLASHBACK_CHALLENGE_TTL — challenge expiry in seconds (default: 900)
      *
-     * @throws Error if required env vars are missing
+     * No secrets or callback URLs are configured here — each client authenticates
+     * with its own OIDC client_id + client_secret, and provides its callback URL
+     * in the /init request. Callbacks are HMAC-signed with the client's secret.
      */
     async initialize(config: PluginConfig): Promise<void> {
         _config = config;
 
-        sharedSecret = process.env.FLASHBACK_SHARED_SECRET || '';
-        if (!sharedSecret) {
-            throw new Error('FlashBack extension requires FLASHBACK_SHARED_SECRET environment variable');
-        }
-
-        defaultCallbackUrl = process.env.FLASHBACK_CALLBACK_URL || '';
-        if (!defaultCallbackUrl) {
-            throw new Error('FlashBack extension requires FLASHBACK_CALLBACK_URL environment variable');
-        }
-        // Strip trailing slash for consistent URL construction
-        defaultCallbackUrl = defaultCallbackUrl.replace(/\/+$/, '');
-
         challengeTtl = parseInt(process.env.FLASHBACK_CHALLENGE_TTL || '900', 10);
 
-        console.log(`FlashBack extension initialized (TTL: ${challengeTtl}s, callback: ${defaultCallbackUrl})`);
+        console.log(`FlashBack extension initialized (TTL: ${challengeTtl}s)`);
     },
 
     /**
@@ -383,17 +399,17 @@ const plugin: ExtensionPlugin = {
         // Rate-limited to 5 requests per minute per email.
         app.post('/flashback/init', async (req: Request, res: Response, next: NextFunction) => {
             try {
-                // Verify client credentials (returns client_id or null)
-                const authenticatedClientId = await verifyClientCredentials(req);
-                if (!authenticatedClientId) {
+                // Verify client credentials (returns client info or null)
+                const authenticatedClient = await verifyClientCredentials(req);
+                if (!authenticatedClient) {
                     return res.status(401).json({ error: 'invalid_client', message: 'Invalid client credentials' });
                 }
 
                 const { sessionId, email, callbackUrl } = req.body;
 
                 // Validate required fields
-                if (!sessionId || !email) {
-                    return res.status(400).json({ error: 'invalid_request', message: 'sessionId and email are required' });
+                if (!sessionId || !email || !callbackUrl) {
+                    return res.status(400).json({ error: 'invalid_request', message: 'sessionId, email, and callbackUrl are required' });
                 }
 
                 // Basic email validation
@@ -419,11 +435,11 @@ const plugin: ExtensionPlugin = {
                 const challenge: FlashbackChallenge = {
                     sessionId,
                     email,
-                    callbackUrl: (callbackUrl || defaultCallbackUrl).replace(/\/+$/, ''),
+                    callbackUrl: callbackUrl.replace(/\/+$/, ''),
                     userExists,
                     status: 'pending',
                     createdAt: Date.now(),
-                    initiatingClientId: authenticatedClientId,
+                    initiatingClientId: authenticatedClient.clientId,
                 };
 
                 // Store in session cache with TTL
