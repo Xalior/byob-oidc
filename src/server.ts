@@ -132,13 +132,9 @@ try {
         cookie: { secure: true },
     }));
 
-    // Body parsing for app routes (oidc-provider has its own)
-    app.use(
-        ['/register', '/profile', '/lost_password', '/reset_password', '/reconfirm', '/interaction',
-         '/flashback/approve', '/flashback/register'],
-        express.urlencoded({ extended: true })
-    );
-    app.use('/flashback/init', express.json());
+    // Body parsing for all app routes (oidc-provider handles its own)
+    app.use(express.urlencoded({ extended: true }));
+    app.use(express.json());
 
     // CSRF protection
     const csrfProtection = csrf({
@@ -149,7 +145,7 @@ try {
     app.use((req: Request, res: Response, next: NextFunction) => {
         if (req.path.startsWith('/token') ||
             req.path.startsWith('/session/end/confirm') ||
-            req.path === '/flashback/init'
+            req.headers.authorization   // API calls with auth headers are not CSRF-vulnerable
         ) {
             next();
         } else {
@@ -158,9 +154,7 @@ try {
     });
 
     app.use((req: Request, res: Response, next: NextFunction) => {
-        if (!req.path.startsWith('/token')
-            && !req.path.startsWith('/session/end/confirm')
-        ) {
+        if (typeof req.csrfToken === 'function') {
             res.locals.csrfToken = req.csrfToken();
         }
         next();

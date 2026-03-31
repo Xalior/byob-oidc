@@ -130,6 +130,20 @@ All config via environment variables, validated by Zod in `src/lib/config.ts`. S
 - External plugins go in `/data/plugins/{providers,sessions,themes,mfa,extensions}/`
 - `PLUGIN_DIR` env var controls external plugin root (default: `/data/plugins`)
 
+## Golden Rule: No Plugin Knowledge in Core
+
+**Core code (server.ts, config.ts, routes.ts, etc.) must NEVER reference specific plugins by name, path, or route.** This is the foundational principle of the architecture.
+
+- No hardcoded plugin paths in middleware (CSRF exemptions, body parsing, etc.)
+- No `if (req.path === '/some-plugin-route')` in core — use generic patterns instead
+- CSRF exemption is generic: requests with `Authorization` headers skip CSRF (standard web security — cross-origin requests cannot set auth headers)
+- Body parsing is global: `express.urlencoded()` and `express.json()` applied to all routes
+- CSRF token generation is defensive: checks `typeof req.csrfToken === 'function'` before calling
+- Plugins register their own routes via `getRoutes(app)` — core just calls the hook
+- If a feature cannot be implemented without modifying core, the plugin infrastructure needs extending — not core
+
+Any violation of this rule means the plugin architecture is incomplete and needs to be fixed at the infrastructure level.
+
 ## Conventions
 
 - ESM throughout (`"type": "module"` in package.json)

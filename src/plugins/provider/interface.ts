@@ -36,7 +36,6 @@ export interface ProviderPlugin extends Plugin {
     /**
      * Look up an account by email address (without verifying credentials).
      * Returns the account if found and eligible, null otherwise.
-     * Used by extensions that need to check if a user exists (e.g. FlashBack).
      */
     findByEmail?(email: string): Promise<OIDCAccount | null>;
 
