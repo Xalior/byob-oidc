@@ -4,13 +4,16 @@ Passwordless login flow for HTTP-only clients that cannot do HTTPS. An HTTP clie
 
 **No passwords ever traverse plain HTTP.**
 
+Any registered OIDC client can use the FlashBack protocol. Callbacks are HMAC-signed with the client's own `client_secret` — no additional shared secrets or per-client configuration needed.
+
 ## How It Works
 
 ```
 Retro Device (HTTP)          BYOB-OIDC (HTTPS)          User's Desktop (HTTPS)
        |                           |                            |
        |  1. POST /flashback/init  |                            |
-       |  {sessionId, email}       |                            |
+       |  {sessionId, email,       |                            |
+       |   callbackUrl}            |                            |
        |-------------------------->|                            |
        |  {challengeId, "pending"} |                            |
        |<--------------------------|                            |
@@ -27,19 +30,20 @@ Retro Device (HTTP)          BYOB-OIDC (HTTPS)          User's Desktop (HTTPS)
        |                           |  4. POST approve/register  |
        |                           |<---------------------------|
        |                           |                            |
-       |                           |  5. Callback to FlashBack  |
-       |                           |     (HMAC-signed)          |
-       |                           |----> FlashBack Server      |
+       |                           |  5. Callback to client     |
+       |                           |     (HMAC-signed with      |
+       |                           |      client_secret)        |
+       |                           |----> Client Server         |
        |                           |                            |
        |  6. User clicks "check"   |                            |
        |  on retro device          |                            |
-       |----> FlashBack checks     |                            |
+       |----> Client checks        |                            |
        |      session is active    |                            |
 ```
 
 ### Flow Details
 
-1. **FlashBack server** calls `POST /flashback/init` with `{sessionId, email, callbackUrl}` using OIDC client credentials (HTTP Basic Auth).
+1. **Client server** calls `POST /flashback/init` with `{sessionId, email, callbackUrl}` using its OIDC client credentials (HTTP Basic Auth).
 
 2. **Plugin** looks up the email via the provider plugin:
    - **If user exists:** emails an HTTPS approval link to `/flashback/approve/{challengeId}`
@@ -47,7 +51,7 @@ Retro Device (HTTP)          BYOB-OIDC (HTTPS)          User's Desktop (HTTPS)
    - Returns `{challengeId, status: "pending"}` either way (does not leak account existence)
 
 3. **Existing user** clicks the approval link on their desktop browser:
-   - Sees: "Approve login for {email} on FlashBack? [Approve] [Deny]"
+   - Sees: "Approve login for {email}? [Approve] [Deny]"
    - Clicks Approve or Deny
 
 4. **New user** clicks the registration link on their desktop browser:
@@ -55,19 +59,20 @@ Retro Device (HTTP)          BYOB-OIDC (HTTPS)          User's Desktop (HTTPS)
    - Enters display name and password
    - Account is created (auto-verified) and the session is auto-approved
 
-5. **On approval or denial**, the plugin POSTs an HMAC-SHA256 signed callback to the FlashBack server:
+5. **On approval or denial**, the plugin POSTs an HMAC-SHA256 signed callback to the client server:
    - Approval: `POST {callbackUrl}/api/sessions/{sessionId}/activate`
    - Denial: `POST {callbackUrl}/api/sessions/{sessionId}/deny`
+   - Signed with the client's own `client_secret`
 
-6. **Retro device** experience: user clicks a link on their retro device to check if the session was approved. This retry page is FlashBack's responsibility, not this plugin's.
+6. **Retro device** experience: user clicks a link on their retro device to check if the session was approved. This retry/polling page is the client's responsibility, not this plugin's.
 
 ## Configuration
 
 | Environment Variable | Required | Default | Description |
 |---------------------|----------|---------|-------------|
-| `FLASHBACK_SHARED_SECRET` | Yes | — | HMAC-SHA256 shared secret for signing callbacks |
-| `FLASHBACK_CALLBACK_URL` | Yes | — | Default FlashBack server URL (e.g. `https://flashback.page`) |
 | `FLASHBACK_CHALLENGE_TTL` | No | `900` | Challenge expiry in seconds (default: 15 minutes) |
+
+No shared secrets or callback URLs are configured on the server. Each client authenticates with its own OIDC `client_id` + `client_secret` and provides its callback URL in the request. Callbacks are HMAC-signed with that client's `client_secret`.
 
 ### Enabling the Extension
 
@@ -79,20 +84,38 @@ EXTENSIONS=flashback
 EXTENSIONS=flashback,other-extension
 ```
 
+### Registering a Client
+
+Any OIDC client in the `clients` table can use the FlashBack protocol. Register a client the same way you would for standard OIDC:
+
+```sql
+INSERT INTO clients (client_id, client_secret, grant_types, redirect_uris, post_logout_redirect_uris, grant_requirements)
+VALUES (
+  'my-retro-app',
+  'a-strong-secret',
+  '["authorization_code"]',
+  '["https://my-retro-app.example.com/callback"]',
+  '["https://my-retro-app.example.com"]',
+  '[]'
+);
+```
+
+The `client_secret` is used both for authenticating `/flashback/init` requests and for HMAC-signing callbacks.
+
 ## API Endpoints
 
 ### POST /flashback/init
 
 Create a new login challenge. Server-to-server call, authenticated with OIDC client credentials.
 
-**Authentication:** HTTP Basic Auth with the FlashBack OIDC client's `client_id` and `client_secret`.
+**Authentication:** HTTP Basic Auth with the client's `client_id` and `client_secret`.
 
 **Request:**
 ```json
 {
   "sessionId": "retro-device-session-id",
   "email": "user@example.com",
-  "callbackUrl": "https://flashback.page"
+  "callbackUrl": "https://my-retro-app.example.com"
 }
 ```
 
@@ -100,7 +123,7 @@ Create a new login challenge. Server-to-server call, authenticated with OIDC cli
 |-------|----------|-------------|
 | `sessionId` | Yes | The retro client's session identifier |
 | `email` | Yes | Email address of the user trying to log in |
-| `callbackUrl` | No | Override the default callback URL |
+| `callbackUrl` | Yes | Base URL for callbacks (receives /api/sessions/... POSTs) |
 
 **Response (200):**
 ```json
@@ -131,8 +154,8 @@ action=approve   # or action=deny
 _csrf=<token>
 ```
 
-**On approval:** sends callback to FlashBack, shows success page.
-**On denial:** sends denial callback, shows denial confirmation.
+**On approval:** sends signed callback, shows success page.
+**On denial:** sends signed denial callback, shows denial confirmation.
 
 ### GET /flashback/register/:challengeId
 
@@ -198,21 +221,116 @@ X-Flashback-Signature: <HMAC-SHA256 hex signature>
 
 ### Verifying the HMAC Signature
 
-The `X-Flashback-Signature` header contains the HMAC-SHA256 signature of the JSON body, signed with the shared secret.
+The `X-Flashback-Signature` header contains the HMAC-SHA256 signature of the JSON body, signed with the client's own `client_secret`.
 
-```javascript
-const crypto = require('crypto');
+```typescript
+import { createHmac } from 'node:crypto';
 
-function verifySignature(body, signature, secret) {
-  const expected = crypto
-    .createHmac('sha256', secret)
-    .update(JSON.stringify(body))
-    .digest('hex');
-  return crypto.timingSafeEqual(
-    Buffer.from(signature, 'hex'),
-    Buffer.from(expected, 'hex')
-  );
+function verifySignature(rawBody: string, signature: string, clientSecret: string): boolean {
+    const expected = createHmac('sha256', clientSecret)
+        .update(rawBody)
+        .digest('hex');
+
+    // Use timing-safe comparison
+    const sigBuf = Buffer.from(signature, 'hex');
+    const expBuf = Buffer.from(expected, 'hex');
+    if (sigBuf.length !== expBuf.length) return false;
+
+    let diff = 0;
+    for (let i = 0; i < sigBuf.length; i++) {
+        diff |= sigBuf[i] ^ expBuf[i];
+    }
+    return diff === 0;
 }
+```
+
+## Test Client
+
+A standalone TypeScript test client is available at `examples/flashback-test-client/client.ts`. It starts a local callback server, initiates a challenge, and verifies the HMAC signature on the response.
+
+### Quick Start
+
+```bash
+# From the project root:
+BYOB_URL=https://dev.id.nextbestnetwork.com \
+CLIENT_ID=your-client-id \
+CLIENT_SECRET=your-client-secret \
+npx tsx examples/flashback-test-client/client.ts --email user@example.com
+```
+
+### What It Does
+
+1. Starts a local HTTP server on port 9999 (configurable via `CALLBACK_PORT`)
+2. Calls `POST /flashback/init` with your client credentials
+3. Prints the challenge ID and waits
+4. You click the approve/deny link in the email
+5. The callback arrives, signature is verified, result is printed
+
+### Environment Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `BYOB_URL` | Yes | — | Base URL of your BYOB-OIDC server |
+| `CLIENT_ID` | Yes | — | OIDC client_id |
+| `CLIENT_SECRET` | Yes | — | OIDC client_secret |
+| `CALLBACK_PORT` | No | `9999` | Port for the local callback server |
+| `CALLBACK_HOST` | No | `localhost` | Hostname the BYOB server can reach |
+
+### Example Output
+
+```
+FlashBack Protocol Test Client
+----------------------------------------
+Callback server listening on http://localhost:9999
+
+Initiating FlashBack challenge...
+  BYOB Server:  https://dev.id.nextbestnetwork.com
+  Client ID:    flashback-dev
+  Email:        user@example.com
+  Session ID:   test-1711756800000
+  Callback URL: http://localhost:9999
+
+Challenge created!
+  Challenge ID: 550e8400-e29b-41d4-a716-446655440000
+  Status:       pending
+
+Check the email for user@example.com and click the approve/deny link.
+Waiting for callback...
+
+============================================================
+CALLBACK RECEIVED: APPROVED
+============================================================
+  Method:    POST
+  URL:       /api/sessions/test-1711756800000/activate
+  Signature: a1b2c3d4...
+  Valid:     YES
+  Body:      {
+    "userId": "abc123",
+    "email": "user@example.com",
+    "sessionId": "test-1711756800000",
+    "action": "approve",
+    "timestamp": 1711756800123
+  }
+============================================================
+
+Session activated successfully!
+  User ID: abc123
+  Email:   user@example.com
+```
+
+### Network Note
+
+The BYOB-OIDC server needs to reach your callback server. If testing locally against a remote BYOB server, use a tunnel:
+
+```bash
+# Using ngrok:
+ngrok http 9999
+# Then set CALLBACK_HOST to the ngrok URL
+
+# Or test against a local dev server (both on localhost):
+BYOB_URL=https://localhost:5000 \
+CALLBACK_HOST=host.docker.internal \
+npx tsx examples/flashback-test-client/client.ts --email user@example.com
 ```
 
 ## Email Templates
@@ -245,13 +363,14 @@ function verifySignature(body, signature, secret) {
 
 ## Security
 
-- **HMAC-SHA256** on all callbacks — prevents spoofed session activations
+- **Per-client HMAC-SHA256** — callbacks signed with the client's own `client_secret`, not a shared secret. Each client verifies callbacks independently.
 - **Challenge TTL** — 15 minutes (configurable), prevents stale challenges
 - **Rate limiting** — 5 requests per minute per email on `/flashback/init`
-- **Client credentials** — `/flashback/init` requires valid OIDC client credentials
+- **Client credentials** — `/flashback/init` requires valid OIDC client credentials (same trust model as OIDC)
 - **CSRF protection** — browser forms (approve, register) include CSRF tokens
 - **No account enumeration** — `/flashback/init` always returns `"pending"` regardless of whether the account exists; different emails are sent but the API response is identical
 - **No HTTP passwords** — passwords are only entered on HTTPS pages in the user's desktop browser
+- **Registration origin tracking** — accounts created via FlashBack record the initiating `client_id` in `registered_from_client_id`
 
 ## Dependencies
 
@@ -260,5 +379,5 @@ This extension uses only core services — no additional npm packages required:
 - `config.services.getSession()` — session cache for challenge storage
 - `config.services.transporter` — email delivery
 - `getProvider()` from registry — user lookup (`findByEmail`) and creation (`createAccount`)
-- `Client.findByClientId()` from core — client credentials verification
+- `Client.findByClientId()` from core — client credentials verification and HMAC key lookup
 - Node.js `crypto` — HMAC-SHA256 signing and UUID generation
