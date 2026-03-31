@@ -169,14 +169,30 @@ async function initChallenge(): Promise<{ challengeId: string; status: string } 
     console.log(`  Session ID:   ${sessionId}`);
     console.log(`  Callback URL: ${callbackUrl}`);
 
-    const response = await fetch(`${BYOB_URL}/flashback/init`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Basic ${credentials}`,
-        },
-        body: JSON.stringify({ sessionId, email, callbackUrl }),
-    });
+    let response: Response;
+    try {
+        response = await fetch(`${BYOB_URL}/flashback/init`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Basic ${credentials}`,
+            },
+            body: JSON.stringify({ sessionId, email, callbackUrl }),
+        });
+    } catch (err: any) {
+        console.error(`\nERROR: Could not connect to ${BYOB_URL}/flashback/init`);
+        console.error(`  ${err.message}`);
+        return null;
+    }
+
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error(`\nERROR: /flashback/init returned ${response.status} (${contentType})`);
+        console.error(`  Response is not JSON. Is EXTENSIONS=flashback set in your .env?`);
+        console.error(`  Body: ${text.substring(0, 200)}`);
+        return null;
+    }
 
     const body = await response.json();
 
