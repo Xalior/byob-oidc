@@ -40,7 +40,13 @@
                             <a class="btn btn-info w-100 py-2 my-2" href="/interaction/{{ uid }}/abort">Cancel</a>
 
                         </div>
-<!--                        <a class="btn btn-primary w-100 py-2 my-2" href="/register">Register</a>-->
+                        {{#registration_enabled}}
+                        <hr class="my-3">
+                        <p class="text-center mb-2">Don't have an account?</p>
+                        <div class="col-2 w-100">
+                            <a class="btn btn-primary w-100 py-2 my-2" href="/register">Sign up</a>
+                        </div>
+                        {{/registration_enabled}}
                     </form>
                 </div>
             </div>

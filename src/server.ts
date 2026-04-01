@@ -77,6 +77,7 @@ declare module 'express-session' {
         destination_path: string;
         remember_me: boolean;
         __mfa_accountId?: string;
+        __interaction_uid?: string;
     }
 }
 

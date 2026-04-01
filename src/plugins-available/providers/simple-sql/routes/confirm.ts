@@ -48,6 +48,12 @@ export default (app: Application): void => {
 
                 req.flash('success', 'Account confirmed - please login to continue');
 
+                const interactionUid = req.session.__interaction_uid;
+                if (interactionUid) {
+                    delete req.session.__interaction_uid;
+                    return res.redirect(`/interaction/${interactionUid}`);
+                }
+
                 return res.redirect("/login");
             }
 

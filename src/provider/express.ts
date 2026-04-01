@@ -8,6 +8,7 @@ import { Request, Response, NextFunction, Application } from 'express';
 
 import { getProvider, getMFA } from '../plugins/registry.ts';
 import { errors } from 'oidc-provider';
+import { config } from '../lib/config.ts';
 
 const body = urlencoded({ extended: false });
 
@@ -70,12 +71,15 @@ export default (app: Application, provider: OIDCProvider): void => {
 
             switch (prompt.name) {
                 case 'login': {
+                    req.session.__interaction_uid = uid;
+
                     return res.render('login', {
                         client,
                         uid,
                         details: prompt.details,
                         params,
                         title: 'Sign-in',
+                        registration_enabled: config.client_features.registration,
                         session: session ? debug(session) : undefined,
                         dbg: {
                             params: debug(params),

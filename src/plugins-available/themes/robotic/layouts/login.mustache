@@ -29,5 +29,11 @@
         <div>
             <a href="/interaction/{{ uid }}/abort">ABORT OPERATION</a>
         </div>
+        {{#registration_enabled}}
+        <hr>
+        <div>
+            <a href="/register">NO IDENTITY? REGISTER NEW ENTITY</a>
+        </div>
+        {{/registration_enabled}}
     </form>
 </div>
