@@ -11,7 +11,6 @@
 
 ### Fixed
 - Theme mode picker not functioning (Bootstrap JS was tree-shaken out of production builds)
-- Improve email deliverability for Docker deployments (DKIM, SPF, DMARC)
 
 ## Release v0.4.0 — BYOB-OIDC
 
