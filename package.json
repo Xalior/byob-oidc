@@ -1,6 +1,6 @@
 {
-    "name": "nbn-oidc-provider",
-    "version": "0.3.1",
+    "name": "byob-oidc",
+    "version": "0.4.1",
     "description": "",
     "main": "src/server.ts",
     "private": true,

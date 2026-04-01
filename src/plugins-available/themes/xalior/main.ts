@@ -2,6 +2,6 @@
 import './scss/styles.scss'
 
 // Import all of Bootstrap's JS
-import * as bootstrap from 'bootstrap'
+import 'bootstrap'
 
 import './colour-modes';

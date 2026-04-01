@@ -140,6 +140,29 @@ async function loadPlugin<T extends Plugin>(
     return plugin as T;
 }
 
+/**
+ * Load multiple plugins of the same type, pushing each into the target array.
+ * Failures are logged as warnings and skipped, unless the plugin name matches
+ * `fatalName` — in which case the error is re-thrown (e.g. the default theme).
+ */
+async function loadPluginList<T extends Plugin>(
+    type: PluginType,
+    names: string[],
+    config: PluginConfig,
+    target: T[],
+    fatalName?: string
+): Promise<void> {
+    for (const name of names) {
+        try {
+            const plugin = await loadPlugin<T>(type, name, config);
+            target.push(plugin);
+        } catch (err: any) {
+            if (name === fatalName) throw err;
+            console.warn(`${type} plugin "${name}" failed to load: ${err.message}`);
+        }
+    }
+}
+
 /** Parse comma-separated env value into array of names */
 function parseList(value: string): string[] {
     return value.split(',').map(s => s.trim()).filter(Boolean);
@@ -241,24 +264,10 @@ export async function initializePlugins(
     plugins.provider = await loadPlugin<ProviderPlugin>('provider', selections.provider, configWithServices);
 
     // MFA plugins (multiple active)
-    const mfaNames = parseList(selections.mfa);
-    for (const name of mfaNames) {
-        const mfa = await loadPlugin<MFAPlugin>('mfa', name, configWithServices);
-        plugins.mfa.push(mfa);
-    }
+    await loadPluginList<MFAPlugin>('mfa', parseList(selections.mfa), configWithServices, plugins.mfa);
 
-    // Theme plugins (load all available, default set by config)
-    const availableThemes = discoverAvailable('theme');
-    for (const name of availableThemes) {
-        try {
-            const theme = await loadPlugin<ThemePlugin>('theme', name, configWithServices);
-            plugins.theme.push(theme);
-        } catch (err: any) {
-            // Non-default themes failing to load is a warning, not fatal
-            if (name === defaultThemeName) throw err;
-            console.warn(`Theme "${name}" failed to load: ${err.message}`);
-        }
-    }
+    // Theme plugins (load all available; default theme failure is fatal)
+    await loadPluginList<ThemePlugin>('theme', discoverAvailable('theme'), configWithServices, plugins.theme, defaultThemeName);
 
     // Ensure default theme was loaded
     if (!plugins.theme.find(t => t.meta.name === defaultThemeName)) {
@@ -266,11 +275,7 @@ export async function initializePlugins(
     }
 
     // Extension plugins (multiple active)
-    const extensionNames = parseList(selections.extensions);
-    for (const name of extensionNames) {
-        const ext = await loadPlugin<ExtensionPlugin>('extension', name, configWithServices);
-        plugins.extension.push(ext);
-    }
+    await loadPluginList<ExtensionPlugin>('extension', parseList(selections.extensions), configWithServices, plugins.extension);
 }
 
 // --- Accessors ---
