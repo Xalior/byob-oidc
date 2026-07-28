@@ -286,9 +286,3 @@ Register Express routes. These are mounted alongside core and provider routes.
 
 #### `getMiddleware?(app: Application): void`
 Register Express middleware that runs before routes. Use for request decoration, header injection, logging, etc.
-
-#### `getClaims?(accountId: string): Promise<Record<string, any>>`
-Return additional OIDC claims for a user. These are merged with the provider's claims during token issuance.
-
-#### `getScopes?(): string[]`
-Return additional OIDC scopes this extension provides. These are added to the server's supported scopes list.
