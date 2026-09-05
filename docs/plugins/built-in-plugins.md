@@ -50,6 +50,46 @@ Tables are managed by the plugin itself during initialization using `pushPluginS
 
 ---
 
+### stdio-auth
+
+**Location:** `src/plugins-available/providers/stdio-auth/`
+**Env var:** `PROVIDER=stdio-auth`
+
+Authenticates against a command you supply. The plugin writes a JSON request to the command's stdin and reads a JSON reply from its stdout, so the accounts can live anywhere: a file, a directory server, or the host operating system via PAM.
+
+**Files:**
+```
+stdio-auth/
+  index.ts           # Plugin entry point, lookup cache
+  backend.ts         # Spawns the command, enforces the JSON contract
+```
+
+**Required env vars:**
+| Variable | Description | Default |
+|---|---|---|
+| `STDIO_AUTH_AUTHENTICATE_COMMAND` | Executable run to check a username and password | _(required)_ |
+| `STDIO_AUTH_LOOKUP_COMMAND` | Executable run to fetch an account's claims without a password | _(required)_ |
+| `STDIO_AUTH_TIMEOUT_MS` | How long a command may run before it is killed | `5000` |
+| `STDIO_AUTH_MAX_OUTPUT_BYTES` | How much stdout the plugin will read | `65536` |
+| `STDIO_AUTH_CACHE_MAX` | Lookup results held in memory | `1000` |
+| `STDIO_AUTH_CACHE_TTL_MS` | How long each is held; `0` switches the cache off | `30000` |
+
+Each command setting is a path to an executable and nothing else. Arguments are not accepted and no shell is involved, so a backend needing flags ships a wrapper script.
+
+**Features:**
+- Backend written in any language, in or out of this repository
+- Passwords travel on stdin only, never argv or the environment
+- Exit code carries the verdict: `0` success, `1` rejected, anything else a backend failure
+- Claims pass through exactly as the backend wrote them, except `sub`, which always restates the account id
+- Successful lookups cached in memory; misses are never cached, so a new account appears at once
+- Backend stderr is captured to the server log
+
+**Not provided:** registration, password reset, profile pages, lockout counters. Accounts, their passwords and their removal belong to whatever sits behind the command.
+
+The full contract is in [The stdio-auth provider](./stdio-auth.md). Working backends are in `examples/backends/`.
+
+---
+
 ## Sessions
 
 ### redis
@@ -88,23 +128,28 @@ redis/
 **Location:** `src/plugins-available/sessions/lru/`
 **Env var:** `SESSION=lru`
 
-In-memory session storage for development and testing. **Not suitable for production** -- all data is lost on restart.
+Bounded in-memory session storage for development and testing. **Not suitable for production** -- all data is lost on restart.
 
 **Files:**
 ```
 lru/
   index.ts           # Plugin entry point
-  adapter.ts         # In-memory Map-based OIDC adapter
+  adapter.ts         # lru-cache backed OIDC adapter
 ```
 
-**Required env vars:** None.
+**Required env vars:**
+| Variable | Description | Default |
+|---|---|---|
+| `SESSION_LRU_MAX` | Entries held before the least recently used one is evicted | `10000` |
 
 **Key features:**
-- Pure in-memory using `Map` with TTL-based expiry
-- Periodic cleanup every 30 seconds
-- Zero external dependencies
+- In-memory, backed by `lru-cache`
+- Per-entry TTL, matching the expiry oidc-provider sets for each artifact
+- Expired entries are dropped when next touched, with no sweep timer
 - No express-session store (uses default MemoryStore)
 - Identical interface to Redis plugin
+
+Eviction can discard a session that has not expired, which logs that user out. Keep `SESSION_LRU_MAX` comfortably above the number of live sessions.
 
 ---
 

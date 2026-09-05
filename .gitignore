@@ -18,3 +18,7 @@ guidelines.txt
 docker-compose.yml
 .output.txt
 test-results/
+
+# Example backends: generated user file and compiled helper
+examples/backends/file/users.json
+examples/backends/pam/pam_check

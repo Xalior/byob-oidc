@@ -1,36 +1,32 @@
+import { LRUCache } from 'lru-cache';
 import { SessionPlugin } from '../../../plugins/session/interface.ts';
 import { PluginConfig } from '../../../plugins/types.ts';
 import { createAdapter, setClientFinder as setAdapterClientFinder } from './adapter.ts';
 import type { AdapterConstructor } from '../../../plugins/session/interface.ts';
 
-const store = new Map<string, { value: any; expiresAt: number | null }>();
+const DEFAULT_MAX = 10_000;
 
-function cleanup() {
-    const now = Date.now();
-    for (const [key, entry] of store) {
-        if (entry.expiresAt && entry.expiresAt <= now) {
-            store.delete(key);
-        }
-    }
-}
-
-// Periodic cleanup every 30 seconds
-let cleanupInterval: ReturnType<typeof setInterval> | null = null;
+/**
+ * Bounded in-memory store. Entries leave either when their TTL has passed and
+ * something touches them, or when the cache is full and the least recently used
+ * entry is evicted to make room.
+ *
+ * Eviction can discard a session that has not expired, so SESSION_LRU_MAX must
+ * stay comfortably above the number of live sessions.
+ */
+let store: LRUCache<string, any>;
 
 const plugin: SessionPlugin = {
-    meta: { name: 'lru', version: '1.0.0', type: 'session', description: 'In-memory session store for development/testing' },
+    meta: { name: 'lru', version: '1.0.0', type: 'session', description: 'Bounded in-memory session store for development/testing' },
 
     async initialize(_config: PluginConfig) {
-        cleanupInterval = setInterval(cleanup, 30_000);
-        console.log('LRU session plugin initialized (in-memory, no persistence)');
+        const max = parseInt(process.env.SESSION_LRU_MAX || String(DEFAULT_MAX), 10);
+        store = new LRUCache<string, any>({ max });
+        console.log(`LRU session plugin initialized (in-memory, no persistence, max ${max} entries)`);
     },
 
     async shutdown() {
-        if (cleanupInterval) {
-            clearInterval(cleanupInterval);
-            cleanupInterval = null;
-        }
-        store.clear();
+        store?.clear();
     },
 
     getAdapterConstructor(): AdapterConstructor {
@@ -40,20 +36,11 @@ const plugin: SessionPlugin = {
     // No express-session store — uses default MemoryStore
 
     async set(key: string, value: any, ttlSeconds?: number): Promise<void> {
-        store.set(key, {
-            value,
-            expiresAt: ttlSeconds ? Date.now() + ttlSeconds * 1000 : null,
-        });
+        store.set(key, value, ttlSeconds ? { ttl: ttlSeconds * 1000 } : undefined);
     },
 
     async get(key: string): Promise<any | undefined> {
-        const entry = store.get(key);
-        if (!entry) return undefined;
-        if (entry.expiresAt && entry.expiresAt <= Date.now()) {
-            store.delete(key);
-            return undefined;
-        }
-        return entry.value;
+        return store.get(key);
     },
 
     async del(key: string): Promise<void> {

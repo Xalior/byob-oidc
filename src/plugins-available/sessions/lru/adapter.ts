@@ -1,6 +1,7 @@
+import type { LRUCache } from 'lru-cache';
 import type { OIDCAdapter } from '../../../plugins/session/interface.ts';
 
-type Store = Map<string, { value: any; expiresAt: number | null }>;
+type Store = LRUCache<string, any>;
 
 /** Allow external code to register a Client finder (same pattern as Redis adapter) */
 let _clientFinder: ((id: string) => Promise<any>) | null = null;
@@ -26,20 +27,11 @@ export function createAdapter(store: Store) {
     const sessionUids = new Map<string, string>();
 
     function get(key: string): any | undefined {
-        const entry = store.get(key);
-        if (!entry) return undefined;
-        if (entry.expiresAt && entry.expiresAt <= Date.now()) {
-            store.delete(key);
-            return undefined;
-        }
-        return entry.value;
+        return store.get(key);
     }
 
     function set(key: string, value: any, expiresIn?: number): void {
-        store.set(key, {
-            value,
-            expiresAt: expiresIn ? Date.now() + expiresIn * 1000 : null,
-        });
+        store.set(key, value, expiresIn ? { ttl: expiresIn * 1000 } : undefined);
     }
 
     class LRUAdapter implements OIDCAdapter {

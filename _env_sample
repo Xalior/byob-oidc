@@ -21,7 +21,7 @@ COOKIE_KEYS=some secret key,and also the old rotated away some time ago,and one 
 # Plugin Selection
 # -----------------------------------------------------------------------------
 # Provider: where users come from (single active)
-# Available: simple-sql
+# Available: simple-sql, stdio-auth
 PROVIDER=simple-sql
 
 # Session: runtime persistence (single active)
@@ -64,9 +64,26 @@ PASSWORD_SALT=11
 CLIENT_FEATURES_REGISTRATION=true
 
 # -----------------------------------------------------------------------------
+# Provider: stdio-auth
+# -----------------------------------------------------------------------------
+# Paths to executables, with no arguments. See docs/plugins/stdio-auth.md.
+STDIO_AUTH_AUTHENTICATE_COMMAND=
+STDIO_AUTH_LOOKUP_COMMAND=
+# STDIO_AUTH_TIMEOUT_MS=5000
+# STDIO_AUTH_MAX_OUTPUT_BYTES=65536
+# STDIO_AUTH_CACHE_MAX=1000
+# STDIO_AUTH_CACHE_TTL_MS=30000
+
+# -----------------------------------------------------------------------------
 # Session: redis
 # -----------------------------------------------------------------------------
 CACHE_URL=redis://host:6379/
+
+# -----------------------------------------------------------------------------
+# Session: lru
+# -----------------------------------------------------------------------------
+# Entries held before the least recently used one is evicted.
+# SESSION_LRU_MAX=10000
 
 # -----------------------------------------------------------------------------
 # Optional Integrations

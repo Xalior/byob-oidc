@@ -12,6 +12,7 @@ This document is the entry point for understanding, using, and writing plugins.
 | [Writing a Plugin](./writing-a-plugin.md) | Step-by-step guide to creating your own plugin |
 | [Plugin Interfaces](./interfaces.md) | Complete API reference for all five plugin types |
 | [Built-in Plugins](./built-in-plugins.md) | Documentation of the plugins that ship with BYOB-OIDC |
+| [The stdio-auth provider](./stdio-auth.md) | Contract for authenticating against a command you supply |
 | [Deploying Plugins](./deploying-plugins.md) | How to install and configure third-party plugins |
 | [PLAN: External Plugin Loading](./PLAN-external-plugin-loading.md) | Plan for features not yet implemented (prebuilt bundle support) |
 
@@ -21,7 +22,7 @@ BYOB-OIDC ships with working defaults. Out of the box:
 
 | Plugin Type | Default | Alternatives |
 |---|---|---|
-| **Provider** | `simple-sql` (MySQL + bcrypt) | Write your own |
+| **Provider** | `simple-sql` (MySQL + bcrypt) | `stdio-auth` (any command you supply), or write your own |
 | **Session** | `redis` (Redis JSON) | `lru` (in-memory, dev only) |
 | **Theme** | `nbn24` (Bootstrap 5) | `robotic`, `xalior` |
 | **MFA** | `otp` (email PIN) | `none` (disabled) |
