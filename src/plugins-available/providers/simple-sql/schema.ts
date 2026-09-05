@@ -7,7 +7,7 @@ export const users = mysqlTable('users', {
     password: text('password').notNull(),
     verified: int('verified').notNull().default(0),
     suspended: int('suspended').notNull().default(0),
-    hmac_key: text('hmac_key'),
+    hmac_key: text('hmac_key'), // Reserved for secondary authentication factors (e.g. TOTP/HMAC signing)
     display_name: text('display_name').notNull(),
     confirmation_attempts: int('confirmation_attempts').default(0),
     login_attempts: int('login_attempts').notNull().default(0),

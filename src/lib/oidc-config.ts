@@ -1,4 +1,4 @@
-import jwks from '../../data/jkws.json' with { type: "json" };
+import jwks from '../../data/jwks.json' with { type: "json" };
 import type { AppConfig } from './config.ts';
 
 /**

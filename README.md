@@ -51,6 +51,13 @@ pnpm run generate-jwks
 
 This creates cryptographic keys for signing OIDC tokens. Use `-f` to force overwrite existing keys.
 
+The generator writes to `keys/`. The server reads its key set from the data
+directory, so copy it across:
+
+```bash
+cp keys/jwks.json data/jwks.json
+```
+
 ### Start
 
 ```bash

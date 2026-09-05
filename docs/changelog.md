@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- The server could not start. It read `data/jkws.json`, a misspelling of the name that `generate-jwks` writes. It now reads `data/jwks.json`. Existing deployments must rename the file in their data volume, see the [upgrade guide](upgrade-from-nbn-oidc.md).
+- Docker images held the private keys. `COPY . .` copied the `keys/` directory, which holds the PEM files and the generated key set. `keys/` is now in `.dockerignore`.
+- The setup instructions had no step to copy the generated key set from `keys/` into `data/`, so a new install failed to start.
+
 ## Release v0.4.1
 
 ### Added
