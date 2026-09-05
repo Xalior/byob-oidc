@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Added
+- New `stdio-auth` provider. It authenticates against a command you supply, writing a JSON request to that command's standard input and reading a JSON reply from its standard output. Accounts can then live wherever you keep them: a file, a directory server, or the host operating system. Passwords travel on standard input only, never in the command line or the environment. See [The stdio-auth provider](plugins/stdio-auth.md) for the contract a command must follow.
+- Two worked backends under `examples/backends/`. The file backend keeps accounts in a JSON file with scrypt hashed passwords, and runs anywhere Node runs. The PAM backend authenticates against the accounts of the Linux machine the server runs on, and keeps the privilege needed to read shadow passwords in one small setuid helper instead of in the identity provider itself.
+
+### Changed
+- The `lru` session plugin now uses the `lru-cache` package. It was an unbounded `Map` swept every 30 seconds, so it could grow until the process ran out of memory. `SESSION_LRU_MAX` now sets how many entries it holds, default 10000. Eviction can end a session that has not expired, so keep that limit above the number of live sessions.
+
 ### Fixed
 - The server could not start. It read `data/jkws.json`, a misspelling of the name that `generate-jwks` writes. It now reads `data/jwks.json`. Existing deployments must rename the file in their data volume, see the [upgrade guide](upgrade-from-nbn-oidc.md).
 - Docker images held the private keys. `COPY . .` copied the `keys/` directory, which holds the PEM files and the generated key set. `keys/` is now in `.dockerignore`.
