@@ -18,6 +18,7 @@ src/
 
   plugins-available/              # Plugin implementations live here
     themes/
+      d3code/index.ts
       nbn24/index.ts
       robotic/index.ts
       xalior/index.ts

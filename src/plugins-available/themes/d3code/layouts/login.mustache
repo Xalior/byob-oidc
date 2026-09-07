@@ -1,0 +1,56 @@
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-9 col-lg-7 col-xl-6">
+            <h1 class="text-center mb-5">Login</h1>
+            <div class="card">
+                <div class="card-body p-5">
+                    <form class="form-signin  m-auto" autocomplete="off" action="/interaction/{{uid}}/login" method="post">
+                        <input type="hidden" name="_csrf" value="{{csrfToken}}">
+
+                        <div class="form-floating">
+                            <input  id="login_email"
+                                    class="form-control login-identifier"
+                                    type="{{login_field.type}}"
+                                    name="login"
+                                    autocomplete="{{login_field.autocomplete}}"
+                                    placeholder="{{login_field.placeholder}}">
+                            <label for="login_email">{{login_field.label}}</label>
+                        </div>
+                        <div class="form-floating">
+
+                            <input  id="login_password"
+                                    class="form-control login-secret"
+                                    type="password"
+                                    name="password"
+                                    placeholder="password">
+                            <label for="login_password">Password</label>
+                        </div>
+
+                        <div class="form-check text-start my-3">
+                            <input class="form-check-input" type="checkbox" name="remember_me" value="1" id="flexCheckDefault">
+                            <label class="form-check-label" for="flexCheckDefault">
+                                Remember me
+                            </label>
+                        </div>
+                        <button class="btn btn-primary w-100 py-2 my-2" type="submit">Sign in</button>
+                        <div class="col-2 w-100">
+                            <a class="btn btn-outline-secondary w-100 py-2 my-2" href="/lost_password">Reset Password</a>
+
+                        </div>
+                        <div class="col-2 w-100">
+                            <a class="btn btn-outline-secondary w-100 py-2 my-2" href="/interaction/{{ uid }}/abort">Cancel</a>
+
+                        </div>
+                        {{#registration_enabled}}
+                        <hr class="my-3">
+                        <p class="text-center mb-2">Don't have an account?</p>
+                        <div class="col-2 w-100">
+                            <a class="btn btn-outline-primary w-100 py-2 my-2" href="/register">Sign up</a>
+                        </div>
+                        {{/registration_enabled}}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,17 @@
+// Bootstrap is compiled first. The vendored D3-code sheet that follows works
+// by re-pointing Bootstrap's own `--bs-*` custom properties, so it only takes
+// effect if it lands after them.
+@import "~bootstrap/scss/bootstrap";
+
+// Vendored, byte for byte, from the plandrop project's D3-code theme, the file
+// themes/d3code/theme.css in that repository. See https://plandrop.dev/
+// Refreshing it from upstream is a straight file copy. Do not edit it here.
+// Corrections belong upstream in plandrop; anything specific to this project
+// goes in _chrome.scss below.
+@import "d3code";
+
+@import "chrome";
+@import "forms";
+@import "signin";
+@import "register";
+@import "darkmode";

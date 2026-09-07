@@ -34,7 +34,7 @@ PROVIDER=simple-sql
 SESSION=redis
 
 # Theme: UI appearance (sets default; all available themes are loaded)
-# Available: nbn24, robotic, xalior
+# Available: nbn24, d3code, robotic, xalior
 THEME=nbn24
 
 # MFA: multi-factor authentication (comma-separated, multiple active)

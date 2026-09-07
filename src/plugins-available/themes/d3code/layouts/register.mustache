@@ -1,0 +1,101 @@
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-9 col-lg-7 col-xl-6">
+
+            <h2 class="text-center mb-5">Create an account</h2>
+            <div class="card">
+                <div class="card-body p-5">
+
+                    <form method="POST" action="/register" class="form-register">
+                        <input type="hidden" name="_csrf" value="{{csrfToken}}">
+
+                        {{#reg_form.errors.display_name}}
+                            <div class="invalid-feedback d-block">
+                                {{reg_form.errors.display_name}}
+                            </div>
+                        {{/reg_form.errors.display_name}}
+                        <div class="form-floating mb-4">
+                            <input type="text" name="display_name" id="display_name" class="form-control" value="{{reg_form.display_name}}" autocomplete="name" placeholder="Your name">
+                            <label for="display_name">Your name</label>
+                        </div>
+
+                        {{#reg_form.errors.email}}
+                            <div class="invalid-feedback d-block">
+                                {{reg_form.errors.email}}
+                            </div>
+                        {{/reg_form.errors.email}}
+                        <div class="form-floating mb-4">
+                            <input type="email" id="login_email" name="email" class="form-control" value="{{reg_form.email}}" autocomplete="email" placeholder="Your email">
+                            <label for="login_email">Your email</label>
+                        </div>
+
+                        {{#reg_form.errors.password_1}}
+                            <div class="invalid-feedback d-block">
+                                {{reg_form.errors.password_1}}
+                            </div>
+                        {{/reg_form.errors.password_1}}
+                        <div class="form-floating mb-4">
+                            <input type="password" id="login_password" name="password_1" class="form-control" autocomplete="new-password" placeholder="Password">
+                            <label for="login_password">Password</label>
+                        </div>
+
+                        {{#reg_form.errors.password_2}}
+                            <div class="invalid-feedback d-block">
+                                {{reg_form.errors.password_2}}
+                            </div>
+                        {{/reg_form.errors.password_2}}
+                        <div class="form-floating mb-4">
+                            <input type="password" id="login_password_confirm" name="password_2" class="form-control" autocomplete="new-password" placeholder="Repeat your password">
+                            <label for="login_password_confirm">Repeat your password</label>
+                        </div>
+
+                        {{#reg_form.errors.agree_tos}}
+                            <div class="invalid-feedback d-block">
+                                {{reg_form.errors.agree_tos}}
+                            </div>
+                        {{/reg_form.errors.agree_tos}}
+                        <div class="form-check d-flex justify-content-center mb-5">
+                            <input class="form-check-input me-2" type="checkbox" id="agree_tos" name="agree_tos" {{#reg_form.agree_tos}}checked{{/reg_form.agree_tos}}>
+                            <label class="form-check-label" for="agree_tos">
+                                I agree all statements in <a href="#" data-bs-toggle="modal" data-bs-target="#popupModal">Terms of service</a>.
+                            </label>
+                        </div>
+
+                        <!-- Honeypot field - hidden from users -->
+                        <div class="form-check d-none">
+                            <input class="form-check-input" type="checkbox" id="confirm_spammer" name="confirm_spammer" {{#reg_form.confirm_spammer}}checked{{/reg_form.confirm_spammer}}>
+                            <label class="form-check-label" for="confirm_spammer">
+                                I confirm that I am a spammer.
+                            </label>
+                        </div>
+
+                        <div class="d-flex justify-content-center">
+                            <button type="submit" class="btn btn-primary btn-lg w-100">Register</button>
+                        </div>
+
+                        <p class="text-center text-muted mt-5 mb-0">Have already an account? <a href="/login" class="fw-semibold">Login here</a></p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal Structure -->
+<div class="modal fade" id="popupModal" tabindex="-1" aria-labelledby="popupModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="popupModalLabel">Terms of Service</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="popupModalBody">
+                {{> tos}}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>

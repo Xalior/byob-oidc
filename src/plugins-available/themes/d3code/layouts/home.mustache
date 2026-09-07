@@ -1,0 +1,13 @@
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <h1 class="mb-3">{{site_name}}</h1>
+            <p class="lead">A closed circuit OpenID provider, providing unified login for online services.</p>
+            <p>{{site_name}} offers seamless integration, robust security, and user-friendly experiences for developers and users alike.</p>
+        {{^user}}
+            <a href="/register" class="btn btn-primary me-2">Get Started</a>
+            <a href="/login" class="btn btn-outline-secondary">Login</a>
+        {{/user}}
+        </div>
+    </div>
+</div>

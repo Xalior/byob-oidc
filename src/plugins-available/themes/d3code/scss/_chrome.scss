@@ -1,0 +1,27 @@
+// Everything this project needs that the vendored D3-code sheet does not
+// cover. Kept apart so the vendored file stays a clean copy of upstream.
+
+html,
+body {
+  min-height: 100%;
+}
+
+// The vendored sheet was written for a document, where the sticky top bar
+// always has prose scrolling under it. A sign-in page is usually shorter than
+// the window, so the page column is told to fill the window first and the card
+// then sits in the middle of what is left.
+main {
+  min-height: 0;
+}
+
+// The logo a relying party supplies for the consent screen. It arrives at
+// whatever size that party chose, so it is held to one the card can carry.
+.login-client-image {
+  margin-bottom: 1.5rem;
+  text-align: center;
+
+  img {
+    max-width: 100%;
+    max-height: 5rem;
+  }
+}

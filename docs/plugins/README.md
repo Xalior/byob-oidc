@@ -24,7 +24,7 @@ BYOB-OIDC ships with working defaults. Out of the box:
 |---|---|---|
 | **Provider** | `simple-sql` (MySQL + bcrypt) | `stdio-auth` (any command you supply), or write your own |
 | **Session** | `redis` (Redis JSON) | `lru` (in-memory, dev only) |
-| **Theme** | `nbn24` (Bootstrap 5) | `robotic`, `xalior` |
+| **Theme** | `nbn24` (Bootstrap 5) | `d3code`, `robotic`, `xalior` |
 | **MFA** | `otp` (email PIN) | `none` (disabled) |
 | **Extensions** | _(none)_ | Write your own |
 

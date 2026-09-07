@@ -1,0 +1,67 @@
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-9 col-lg-7 col-xl-6">
+            <h1 class="h3 text-center mb-4">Authorise access</h1>
+            <div class="card">
+                <div class="card-body p-4 p-md-5">
+                    <div class="login-client-image">
+                        {{#client.logoUri}}
+                            <img src="{{client.logoUri}}" alt="{{client.clientName}}">
+                        {{/client.logoUri}}
+                    </div>
+
+                    {{#noMissingDetails}}
+                        <p>This application is asking you to confirm an authorisation you gave it before.</p>
+                    {{/noMissingDetails}}
+
+                    {{#filteredMissingOIDCScope}}
+                        <h2 class="h6 mt-4">Scopes</h2>
+                        <ul class="list-unstyled mb-0">
+                        {{#filteredMissingOIDCScope}}
+                            <li><code>{{.}}</code></li>
+                        {{/filteredMissingOIDCScope}}
+                        </ul>
+                    {{/filteredMissingOIDCScope}}
+
+                    {{#filteredMissingOIDCClaims}}
+                        <h2 class="h6 mt-4">Claims</h2>
+                        <ul class="list-unstyled mb-0">
+                            {{#filteredMissingOIDCClaims}}
+                                <li><code>{{.}}</code></li>
+                            {{/filteredMissingOIDCClaims}}
+                        </ul>
+                    {{/filteredMissingOIDCClaims}}
+
+                    {{#missingResourceScopes}}
+                        {{#eachMissingResourceScope}}
+                            <h2 class="h6 mt-4">{{indicator}}</h2>
+                            <ul class="list-unstyled mb-0">
+                                {{#scopes}}
+                                    <li><code>{{.}}</code></li>
+                                {{/scopes}}
+                            </ul>
+                        {{/eachMissingResourceScope}}
+                    {{/missingResourceScopes}}
+
+                    {{#rar}}
+                        <h2 class="h6 mt-4">Authorization details</h2>
+                        {{#rar}}
+                            <pre>{{jsonString}}</pre>
+                        {{/rar}}
+                    {{/rar}}
+
+                    {{#isOfflineAccessRequested}}
+                        <p class="mt-4">
+                            This application is asking for offline access to this authorisation{{#hasPreviouslyGrantedOfflineAccess}}, which you granted before{{/hasPreviouslyGrantedOfflineAccess}}.
+                        </p>
+                    {{/isOfflineAccessRequested}}
+
+                    <form autocomplete="off" action="/interaction/{{uid}}/confirm" method="post">
+                        <input type="hidden" name="_csrf" value="{{csrfToken}}">
+                        <button class="btn btn-primary w-100 py-2 mt-4" autofocus type="submit">Continue</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

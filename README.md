@@ -81,6 +81,7 @@ src/
     extension/interface.ts   # ExtensionPlugin interface
   plugins-available/
     themes/
+      d3code/                # Rose on warm paper, violet on deep indigo
       nbn24/                 # Clean, modern Bootstrap design
       robotic/               # Terminal/sci-fi green-on-black
       xalior/                # Retro-styled Bootstrap layout
@@ -107,6 +108,7 @@ src/
 
 **Themes:**
 - `nbn24` — Clean Bootstrap design with dark mode toggle (default)
+- `d3code` — The appearance of the D3-code desktop application: rose on warm paper in light, violet and pink on deep indigo in dark
 - `xalior` — Retro-styled Bootstrap layout
 - `robotic` — Terminal/sci-fi green-on-black theme
 

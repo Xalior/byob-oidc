@@ -23,7 +23,8 @@ module.exports = {
     entry: {
         nbn24: './src/plugins-available/themes/nbn24/main.ts',
         xalior: './src/plugins-available/themes/xalior/main.ts',
-        robotic: './src/plugins-available/themes/robotic/main.ts'
+        robotic: './src/plugins-available/themes/robotic/main.ts',
+        d3code: './src/plugins-available/themes/d3code/main.ts'
     },
     output: {
         filename: '[name]/main.js',
