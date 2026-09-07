@@ -73,7 +73,6 @@ stdio-auth/
 | `STDIO_AUTH_MAX_OUTPUT_BYTES` | How much stdout the plugin will read | `65536` |
 | `STDIO_AUTH_CACHE_MAX` | Lookup results held in memory | `1000` |
 | `STDIO_AUTH_CACHE_TTL_MS` | How long each is held; `0` switches the cache off | `30000` |
-| `STDIO_AUTH_LOGIN_LABEL` | What the login form calls the identifier field | `Username` |
 
 Each command setting is a path to an executable and nothing else. Arguments are not accepted and no shell is involved, so a backend needing flags ships a wrapper script.
 
@@ -84,7 +83,7 @@ Each command setting is a path to an executable and nothing else. Arguments are 
 - Claims pass through exactly as the backend wrote them, except `sub`, which always restates the account id
 - Successful lookups cached in memory; misses are never cached, so a new account appears at once
 - Backend stderr is captured to the server log
-- The login form asks for a username in a plain text field, not an email address
+- The login form asks for a username in a plain text field, not an email address. The core `LOGIN_LABEL` setting rewords it
 
 **Not provided:** registration, password reset, profile pages, lockout counters. The login page, navigation bar and home page hide the links to those pages, since nothing serves them. Accounts, their passwords and their removal belong to whatever sits behind the command.
 

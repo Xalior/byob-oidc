@@ -15,6 +15,7 @@ export const env = createEnv({
         MODE: z.string().default('dev'),
         PORT: z.coerce.number().default(5000),
         BIND_ADDRESS: z.string().default('0.0.0.0'),
+        LOGIN_LABEL: z.string().optional(),
         SESSION_SECRET: z.string().default('session-secret'),
         CLIENT_ID: z.string().default('SELF'),
         CLIENT_SECRET: z.string().default('SELF_SECRET'),
@@ -72,6 +73,7 @@ export interface AppConfig {
     mode: string;
     port: number;
     bind_address: string;
+    login_label: string | undefined;
     session_secret: string;
     client_id: string;
     client_secret: string;
@@ -115,6 +117,7 @@ export const config: AppConfig = {
     mode: env.MODE,
     port: env.PORT,
     bind_address: env.BIND_ADDRESS,
+    login_label: env.LOGIN_LABEL,
     session_secret: env.SESSION_SECRET,
     client_id: env.CLIENT_ID,
     client_secret: env.CLIENT_SECRET,

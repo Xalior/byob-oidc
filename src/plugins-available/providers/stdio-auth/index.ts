@@ -1,6 +1,6 @@
 import { LRUCache } from 'lru-cache';
 import { Request } from 'express';
-import { ProviderPlugin, OIDCAccount, LoginField } from '../../../plugins/provider/interface.ts';
+import { ProviderPlugin, OIDCAccount } from '../../../plugins/provider/interface.ts';
 import { PluginConfig } from '../../../plugins/types.ts';
 import { runBackend, BackendOptions } from './backend.ts';
 
@@ -20,13 +20,6 @@ let lookupOptions: BackendOptions;
  * newly created account is visible at once. Null when caching is switched off.
  */
 let cache: LRUCache<string, Record<string, any>> | null = null;
-
-/**
- * The backend decides what a person types to identify themselves, and it is
- * rarely an email address. A text field accepts an address as readily as a
- * username, so this never blocks a backend that does use addresses.
- */
-let loginField: LoginField;
 
 function numberFromEnv(name: string, fallback: number): number {
     const raw = process.env[name];
@@ -105,22 +98,22 @@ const plugin: ProviderPlugin = {
             ? new LRUCache<string, Record<string, any>>({ max: cacheMax, ttl: cacheTtlMs })
             : null;
 
-        const label = process.env.STDIO_AUTH_LOGIN_LABEL || 'Username';
-        loginField = {
-            type: 'text',
-            label,
-            placeholder: label.toLowerCase(),
-            autocomplete: 'username',
-        };
-
         console.log(
             `stdio-auth provider initialized (authenticate: ${authenticateCommand}, lookup: ${lookupCommand}, ` +
             `cache: ${cache ? `${cacheMax} entries for ${cacheTtlMs}ms` : 'off'})`,
         );
     },
 
-    get loginField(): LoginField {
-        return loginField;
+    /**
+     * The backend decides what a person types, and it is rarely an email
+     * address. A text box takes an address as readily as a username, so this
+     * never blocks a backend that does use addresses. LOGIN_LABEL renames it.
+     */
+    loginField: {
+        type: 'text',
+        label: 'Username',
+        placeholder: 'username',
+        autocomplete: 'username',
     },
 
     async authenticate(req: Request): Promise<OIDCAccount | null> {

@@ -36,13 +36,13 @@ STDIO_AUTH_TIMEOUT_MS=5000          # how long a command may run
 STDIO_AUTH_MAX_OUTPUT_BYTES=65536   # how much stdout the plugin will read
 STDIO_AUTH_CACHE_MAX=1000           # how many lookup results to hold
 STDIO_AUTH_CACHE_TTL_MS=30000       # how long to hold each one
-STDIO_AUTH_LOGIN_LABEL=Username     # what the login form calls the field
 ```
 
-`STDIO_AUTH_LOGIN_LABEL` changes the wording on the login page. The field itself
-is always a plain text box, because the person's identifier is whatever your
-backend recognises. An email address is accepted in a text box, so setting the
-label to `Email address` is all you need when your backend does use addresses.
+The login page asks for a `Username` in a plain text box, because the name a
+person types is whatever your backend recognises. A text box takes an email
+address as readily as anything else, so a backend that does use addresses needs
+no change. To reword the label, set the core setting `LOGIN_LABEL`, which
+applies whichever provider is running.
 
 ## The two commands
 

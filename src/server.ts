@@ -19,6 +19,15 @@ import { config } from './lib/config.js';
 import { buildOIDCConfig } from './lib/oidc-config.js';
 import { initializePlugins, getTheme, getSession, getProvider, getExtensions } from './plugins/registry.js';
 import { Client } from './models/clients.js';
+import type { LoginField } from './plugins/provider/interface.js';
+
+/** What the login form asks for when a provider does not define it. */
+const DEFAULT_LOGIN_FIELD: LoginField = {
+    type: 'email',
+    label: 'Email address',
+    placeholder: 'name@example.com',
+    autocomplete: 'username',
+};
 
 import * as openidClient from 'openid-client';
 import passport from 'passport';
@@ -197,6 +206,14 @@ try {
     const defaultViewsDir = path.join(__dirname, 'views');
     const viewsDir = themeLayoutsDir && existsSync(themeLayoutsDir) ? themeLayoutsDir : defaultViewsDir;
     app.set('views', viewsDir);
+
+    // What the login form asks a person to type. The provider knows what it
+    // matches on, so it sets the input type. The operator names the field,
+    // because the wording belongs to the site rather than to the provider.
+    const providerLoginField = getProvider().loginField ?? DEFAULT_LOGIN_FIELD;
+    app.locals.login_field = config.login_label
+        ? { ...providerLoginField, label: config.login_label, placeholder: config.login_label.toLowerCase() }
+        : providerLoginField;
 
     // Which account management links the pages may show. A provider that does
     // not serve a route must not be linked to it, or the link is a 404.

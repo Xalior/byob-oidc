@@ -210,6 +210,8 @@ interface LoginField {
 
 Omit it and the form asks for an email address, which is what `simple-sql` needs. A provider that identifies people any other way must set `type: 'text'`, or the browser refuses to submit a name with no `@` in it.
 
+The type is yours to decide, because only you know what your provider matches on. The wording is not: the operator can rename the field with the core `LOGIN_LABEL` setting, whichever provider is running, and that overrides the `label` and `placeholder` you give here.
+
 #### `capabilities?: ProviderCapabilities`
 Which account management pages this provider serves.
 
