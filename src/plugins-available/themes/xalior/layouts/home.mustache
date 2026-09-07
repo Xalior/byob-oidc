@@ -4,7 +4,7 @@
         <p>A closed circuit OpenID provider, providing unified login for online services.</p>
         <p>{{site_name}} offers seamless integration, robust security, and user-friendly experiences for developers and users alike.</p>
     {{^user}}
-        <a href="/register" class="btn btn-primary">Get Started</a>
+        {{#registration_enabled}}<a href="/register" class="btn btn-primary">Get Started</a>{{/registration_enabled}}
         <a href="/login" class="btn btn-secondary">Login</a>
     {{/user}}
     </div>

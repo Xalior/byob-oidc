@@ -198,6 +198,13 @@ try {
     const viewsDir = themeLayoutsDir && existsSync(themeLayoutsDir) ? themeLayoutsDir : defaultViewsDir;
     app.set('views', viewsDir);
 
+    // Which account management links the pages may show. A provider that does
+    // not serve a route must not be linked to it, or the link is a 404.
+    const capabilities = getProvider().capabilities ?? {};
+    app.locals.registration_enabled = Boolean(config.client_features.registration && capabilities.registration);
+    app.locals.password_reset_enabled = Boolean(capabilities.passwordReset);
+    app.locals.profile_enabled = Boolean(capabilities.profile);
+
     // ── 7. Render locals injection ─────────────────────────────────────
     const hide_headers: string[] = ['login', 'mfa', 'register'];
 

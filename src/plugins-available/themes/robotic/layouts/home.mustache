@@ -3,11 +3,11 @@
     <p>CLOSED CIRCUIT OPENID PROVIDER. UNIFIED AUTHENTICATION FOR SPECTRUM NEXT NETWORK SERVICES.</p>
     <p>STATUS: OPERATIONAL. ENCRYPTION: ACTIVE.</p>
 {{^user}}
-    <a href="/register">INITIALIZE NEW ENTITY</a>
+    {{#registration_enabled}}<a href="/register">INITIALIZE NEW ENTITY</a>{{/registration_enabled}}
     <a href="/login">ESTABLISH CONNECTION</a>
 {{/user}}
 {{#user}}
     <p>WELCOME, ENTITY {{user.display_name}}.</p>
-    <a href="/profile">ACCESS DATA CORE</a>
+    {{#profile_enabled}}<a href="/profile">ACCESS DATA CORE</a>{{/profile_enabled}}
 {{/user}}
 </div>

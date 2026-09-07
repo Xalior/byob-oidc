@@ -109,6 +109,7 @@ interface ProviderPlugin extends Plugin {
 
     // Optional
     loginField?: LoginField;
+    capabilities?: ProviderCapabilities;
     getRoutes?(app: Application): void;
     externalAuth?: boolean;
     getExternalLoginUrl?(returnTo: string): Promise<string>;
@@ -166,6 +167,19 @@ interface LoginField {
 ```
 
 Omit it and the form asks for an email address, which is what `simple-sql` needs. A provider that identifies people any other way must set `type: 'text'`, or the browser refuses to submit a name with no `@` in it.
+
+#### `capabilities?: ProviderCapabilities`
+Which account management pages this provider serves.
+
+```typescript
+interface ProviderCapabilities {
+    registration?: boolean;    // serves /register
+    passwordReset?: boolean;   // serves /lost_password and /reset_password
+    profile?: boolean;         // serves /profile
+}
+```
+
+Omit it and the pages link to none of them, which is right for a provider that only checks passwords. The login page, the navigation bar and the home page all hide a link when the provider does not serve the route behind it, so a headless provider cannot leave a visitor staring at a 404. `CLIENT_FEATURES_REGISTRATION` still applies on top: registration shows only when the operator allows it and the provider offers it.
 
 #### `getRoutes?(app: Application): void`
 Register provider-specific Express routes. The `simple-sql` provider registers: `/register`, `/confirm`, `/reconfirm`, `/profile`, `/lost_password`, `/reset_password`. A read-only provider (CSV, LDAP) might register nothing.

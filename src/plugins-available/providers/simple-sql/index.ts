@@ -30,6 +30,12 @@ const plugin: ProviderPlugin = {
         description: 'MySQL/SQL provider with bcrypt auth, email confirmation, and user management',
     },
 
+    capabilities: {
+        registration: true,
+        passwordReset: true,
+        profile: true,
+    },
+
     async initialize(config: PluginConfig) {
         const databaseUrl = process.env.DATABASE_URL;
         if (!databaseUrl) {

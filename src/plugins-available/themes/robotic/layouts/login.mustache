@@ -24,9 +24,11 @@
             <label for="flexCheckDefault">PERSIST SESSION</label>
         </div>
         <button type="submit">INITIALIZE LOGIN</button>
+        {{#password_reset_enabled}}
         <div>
             <a href="/lost_password">RECOVER ACCESS KEY</a>
         </div>
+        {{/password_reset_enabled}}
         <div>
             <a href="/interaction/{{ uid }}/abort">ABORT OPERATION</a>
         </div>

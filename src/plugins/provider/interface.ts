@@ -6,6 +6,19 @@ export interface OIDCAccount {
     claims(use: string, scope: string): Promise<Record<string, any>>;
 }
 
+/**
+ * What a provider offers beyond checking a password. The pages link to these
+ * only when the active provider actually serves the routes behind them.
+ */
+export interface ProviderCapabilities {
+    /** Serves /register and can create accounts. */
+    registration?: boolean;
+    /** Serves /lost_password and /reset_password. */
+    passwordReset?: boolean;
+    /** Serves /profile. */
+    profile?: boolean;
+}
+
 /** How the login form should present the field that identifies a person. */
 export interface LoginField {
     /** `email` makes the browser demand an address. `text` accepts anything. */
@@ -25,6 +38,12 @@ export interface ProviderPlugin extends Plugin {
      * Omitted means an email address.
      */
     loginField?: LoginField;
+
+    /**
+     * Which of the account management pages this provider serves. Omitted means
+     * none of them, which is right for a provider that only checks passwords.
+     */
+    capabilities?: ProviderCapabilities;
 
     /**
      * Verify credentials from login form (req.body.login, req.body.password).

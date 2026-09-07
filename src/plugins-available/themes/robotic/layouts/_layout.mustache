@@ -41,11 +41,11 @@
         <li><a href="/">HOME</a></li>
         <li><a href="/docs/about">ABOUT</a></li>
         {{^user}}
-            <li><a href="/register">REGISTER</a></li>
+            {{#registration_enabled}}<li><a href="/register">REGISTER</a></li>{{/registration_enabled}}
             <li><a href="/login">LOGIN</a></li>
         {{/user}}
         {{#user}}
-            <li><a href="/profile">PROFILE</a></li>
+            {{#profile_enabled}}<li><a href="/profile">PROFILE</a></li>{{/profile_enabled}}
             <li><a href="/logout">LOGOUT</a></li>
         {{/user}}
     </ul>

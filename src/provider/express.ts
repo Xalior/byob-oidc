@@ -89,7 +89,6 @@ export default (app: Application, provider: OIDCProvider): void => {
                         details: prompt.details,
                         params,
                         title: 'Sign-in',
-                        registration_enabled: config.client_features.registration,
                         session: session ? debug(session) : undefined,
                         dbg: {
                             params: debug(params),

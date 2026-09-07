@@ -86,7 +86,7 @@ Each command setting is a path to an executable and nothing else. Arguments are 
 - Backend stderr is captured to the server log
 - The login form asks for a username in a plain text field, not an email address
 
-**Not provided:** registration, password reset, profile pages, lockout counters. Accounts, their passwords and their removal belong to whatever sits behind the command.
+**Not provided:** registration, password reset, profile pages, lockout counters. The login page, navigation bar and home page hide the links to those pages, since nothing serves them. Accounts, their passwords and their removal belong to whatever sits behind the command.
 
 The full contract is in [The stdio-auth provider](./stdio-auth.md). Working backends are in `examples/backends/`.
 

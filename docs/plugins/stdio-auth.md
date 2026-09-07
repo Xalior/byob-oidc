@@ -174,7 +174,9 @@ and set it to `0` to switch the cache off.
 
 There is no registration, no password reset and no profile page. `stdio-auth`
 answers questions about accounts that already exist somewhere else, and that
-somewhere else owns their creation, their passwords and their removal.
+somewhere else owns their creation, their passwords and their removal. The
+pages hide the links to all three, so nobody is offered a page that is not
+there.
 
 Account state is your backend's business too. An account that is expired, locked,
 suspended or out of hours should be rejected with exit code `1`. The plugin has no
