@@ -73,6 +73,7 @@ stdio-auth/
 | `STDIO_AUTH_MAX_OUTPUT_BYTES` | How much stdout the plugin will read | `65536` |
 | `STDIO_AUTH_CACHE_MAX` | Lookup results held in memory | `1000` |
 | `STDIO_AUTH_CACHE_TTL_MS` | How long each is held; `0` switches the cache off | `30000` |
+| `STDIO_AUTH_LOGIN_LABEL` | What the login form calls the identifier field | `Username` |
 
 Each command setting is a path to an executable and nothing else. Arguments are not accepted and no shell is involved, so a backend needing flags ships a wrapper script.
 
@@ -83,6 +84,7 @@ Each command setting is a path to an executable and nothing else. Arguments are 
 - Claims pass through exactly as the backend wrote them, except `sub`, which always restates the account id
 - Successful lookups cached in memory; misses are never cached, so a new account appears at once
 - Backend stderr is captured to the server log
+- The login form asks for a username in a plain text field, not an email address
 
 **Not provided:** registration, password reset, profile pages, lockout counters. Accounts, their passwords and their removal belong to whatever sits behind the command.
 
@@ -155,7 +157,7 @@ Eviction can discard a session that has not expired, which logs that user out. K
 
 ## Themes
 
-All three themes ship with BYOB-OIDC. All available themes are auto-discovered and loaded; the `THEME` env var sets the default.
+These themes ship with BYOB-OIDC. All available themes are auto-discovered and loaded; the `THEME` env var sets the default.
 
 ### nbn24
 
@@ -163,6 +165,15 @@ All three themes ship with BYOB-OIDC. All available themes are auto-discovered a
 **Env var:** `THEME=nbn24` (default)
 
 Clean Bootstrap 5 theme with light/dark mode support. Uses the core default Mustache templates (`layoutsDir()` returns `null`).
+
+### d3code
+
+**Location:** `src/plugins-available/themes/d3code/`
+**Env var:** `THEME=d3code`
+
+The appearance of the D3-code desktop application, in both of its colour schemes: rose call-to-action buttons on warm pink paper in light, violet and pink on deep indigo in dark. Rounded cards, a blurred top bar that the page shows through, and a focus ring set one pixel clear of the control it marks. Ships its own Mustache templates.
+
+The palette and geometry come from the plandrop D3-code theme, vendored unchanged as `scss/_d3code.scss` and licensed under the LGPL-3.0-only. See the `NOTICE` file in the theme directory.
 
 ### robotic
 

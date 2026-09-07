@@ -4,11 +4,12 @@
         <input type="hidden" name="_csrf" value="{{csrfToken}}">
 
         <div>
-            <label for="login_email">IDENTIFIER (EMAIL):</label><br>
+            <label for="login_email">IDENTIFIER ({{login_field.label}}):</label><br>
             <input  id="login_email"
-                    type="email"
+                    type="{{login_field.type}}"
                     name="login"
-                    placeholder="entity@network.local">
+                    autocomplete="{{login_field.autocomplete}}"
+                    placeholder="{{login_field.placeholder}}">
         </div>
         <div>
             <label for="login_password">ACCESS KEY (PASSWORD):</label><br>

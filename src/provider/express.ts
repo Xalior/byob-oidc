@@ -9,6 +9,15 @@ import { Request, Response, NextFunction, Application } from 'express';
 import { getProvider, getMFA } from '../plugins/registry.ts';
 import { errors } from 'oidc-provider';
 import { config } from '../lib/config.ts';
+import type { LoginField } from '../plugins/provider/interface.ts';
+
+/** What the login form asks for when a provider does not say. */
+const DEFAULT_LOGIN_FIELD: LoginField = {
+    type: 'email',
+    label: 'Email address',
+    placeholder: 'name@example.com',
+    autocomplete: 'username',
+};
 
 const body = urlencoded({ extended: false });
 
@@ -76,6 +85,7 @@ export default (app: Application, provider: OIDCProvider): void => {
                     return res.render('login', {
                         client,
                         uid,
+                        login_field: getProvider().loginField ?? DEFAULT_LOGIN_FIELD,
                         details: prompt.details,
                         params,
                         title: 'Sign-in',

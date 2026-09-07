@@ -10,10 +10,11 @@
                         <div class="form-floating">
                             <input  id="login_email"
                                     class="form-control"
-                                    type="email"
+                                    type="{{login_field.type}}"
                                     name="login"
-                                    placeholder="name@example.com">
-                            <label for="login_email">Email address</label>
+                                    autocomplete="{{login_field.autocomplete}}"
+                                    placeholder="{{login_field.placeholder}}">
+                            <label for="login_email">{{login_field.label}}</label>
                         </div>
                         <div class="form-floating">
 

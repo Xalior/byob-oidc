@@ -6,8 +6,25 @@ export interface OIDCAccount {
     claims(use: string, scope: string): Promise<Record<string, any>>;
 }
 
+/** How the login form should present the field that identifies a person. */
+export interface LoginField {
+    /** `email` makes the browser demand an address. `text` accepts anything. */
+    type: 'email' | 'text';
+    label: string;
+    placeholder: string;
+    autocomplete: string;
+}
+
 export interface ProviderPlugin extends Plugin {
     meta: PluginMeta & { type: 'provider' };
+
+    /**
+     * What the login form should ask for. A provider that identifies people by
+     * something other than an email address says so here, or the browser will
+     * refuse to submit a name that has no @ in it.
+     * Omitted means an email address.
+     */
+    loginField?: LoginField;
 
     /**
      * Verify credentials from login form (req.body.login, req.body.password).

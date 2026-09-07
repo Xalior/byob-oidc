@@ -108,6 +108,7 @@ interface ProviderPlugin extends Plugin {
     getClaims(accountId: string, use: string, scope: string): Promise<Record<string, any>>;
 
     // Optional
+    loginField?: LoginField;
     getRoutes?(app: Application): void;
     externalAuth?: boolean;
     getExternalLoginUrl?(returnTo: string): Promise<string>;
@@ -150,7 +151,21 @@ Return OIDC claims for a given account. Standard claims include:
 }
 ```
 
-### Optional Methods
+### Optional Members
+
+#### `loginField?: LoginField`
+What the login form should ask a person to type.
+
+```typescript
+interface LoginField {
+    type: 'email' | 'text';   // 'email' makes the browser demand an address
+    label: string;
+    placeholder: string;
+    autocomplete: string;
+}
+```
+
+Omit it and the form asks for an email address, which is what `simple-sql` needs. A provider that identifies people any other way must set `type: 'text'`, or the browser refuses to submit a name with no `@` in it.
 
 #### `getRoutes?(app: Application): void`
 Register provider-specific Express routes. The `simple-sql` provider registers: `/register`, `/confirm`, `/reconfirm`, `/profile`, `/lost_password`, `/reset_password`. A read-only provider (CSV, LDAP) might register nothing.
