@@ -87,6 +87,48 @@ Returns the absolute path to the theme's static assets directory (CSS, images, f
 app.use('/theme', express.static(theme.assetsDir()));
 ```
 
+### The template contract
+
+A theme that overrides a template takes on the job that template was doing. Core
+supplies values that describe the running provider, and a template that ignores
+them shows a field nobody can fill in, or a link that leads to a 404. Nothing
+checks this for you, so it is written down here.
+
+| Template | Value | What happens if you ignore it |
+|---|---|---|
+| `login.mustache` | `login_field.type`, `.label`, `.placeholder`, `.autocomplete` | A hard-coded `type="email"` field means the browser refuses to submit a username, and nobody can log in at all. |
+| `login.mustache` | `password_reset_enabled` | The Reset Password link leads to a 404 under any provider that does not serve `/lost_password`. |
+| `login.mustache`, `_layout.mustache`, `home.mustache` | `registration_enabled` | A Sign up or Register link leads to a 404. |
+| `_layout.mustache`, `home.mustache` | `profile_enabled` | A Profile link leads to a 404, shown to somebody who has just logged in successfully. |
+
+Wrap a link in the matching section, so it disappears when the provider does not
+serve it:
+
+```mustache
+{{#profile_enabled}}
+<a class="nav-link" href="/profile">Profile</a>
+{{/profile_enabled}}
+```
+
+Render the identifier field from what the provider asked for, rather than
+assuming an email address:
+
+```mustache
+<input  id="login_email"
+        class="form-control login-identifier"
+        type="{{login_field.type}}"
+        name="login"
+        autocomplete="{{login_field.autocomplete}}"
+        placeholder="{{login_field.placeholder}}">
+<label for="login_email">{{login_field.label}}</label>
+```
+
+One styling note that comes with it. Themes that join the identifier and
+password boxes into a single control should match the `login-identifier` and
+`login-secret` class names, not the input type. Every form on the site shares
+the `form-signin` class, so a rule matching `input[type="text"]` will also catch
+a one-time passcode box or anything else an MFA plugin renders.
+
 ---
 
 ## ProviderPlugin
