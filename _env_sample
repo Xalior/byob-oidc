@@ -11,6 +11,11 @@ SITE_NAME=My OIDC Provider
 NODE_ENV=production
 PORT=5000
 
+# Interface the server listens on. The default accepts connections on every
+# interface. Set one address to keep the server off the others, for example the
+# Docker bridge when a reverse proxy in a container provides TLS and ingress.
+BIND_ADDRESS=0.0.0.0
+
 # Session encryption secret
 SESSION_SECRET=your-secure-session-secret
 

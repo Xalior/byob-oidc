@@ -14,6 +14,7 @@ export const env = createEnv({
         SITE_NAME: z.string().default('OIDC Provider'),
         MODE: z.string().default('dev'),
         PORT: z.coerce.number().default(5000),
+        BIND_ADDRESS: z.string().default('0.0.0.0'),
         SESSION_SECRET: z.string().default('session-secret'),
         CLIENT_ID: z.string().default('SELF'),
         CLIENT_SECRET: z.string().default('SELF_SECRET'),
@@ -70,6 +71,7 @@ export interface AppConfig {
     site_name: string;
     mode: string;
     port: number;
+    bind_address: string;
     session_secret: string;
     client_id: string;
     client_secret: string;
@@ -112,6 +114,7 @@ export const config: AppConfig = {
     site_name: env.SITE_NAME,
     mode: env.MODE,
     port: env.PORT,
+    bind_address: env.BIND_ADDRESS,
     session_secret: env.SESSION_SECRET,
     client_id: env.CLIENT_ID,
     client_secret: env.CLIENT_SECRET,

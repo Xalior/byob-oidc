@@ -4,6 +4,7 @@
 
 ### Added
 - New `stdio-auth` provider. It authenticates against a command you supply, writing a JSON request to that command's standard input and reading a JSON reply from its standard output. Accounts can then live wherever you keep them: a file, a directory server, or the host operating system. Passwords travel on standard input only, never in the command line or the environment. See [The stdio-auth provider](plugins/stdio-auth.md) for the contract a command must follow.
+- `BIND_ADDRESS` sets the interface the server listens on, and defaults to `0.0.0.0`, which is what it did before. Set one address when a reverse proxy provides TLS and ingress, so the server is not reachable on the machine's other interfaces.
 - Two worked backends under `examples/backends/`. The file backend keeps accounts in a JSON file with scrypt hashed passwords, and runs anywhere Node runs. The PAM backend authenticates against the accounts of the Linux machine the server runs on, and keeps the privilege needed to read shadow passwords in one small setuid helper instead of in the identity provider itself.
 
 ### Changed

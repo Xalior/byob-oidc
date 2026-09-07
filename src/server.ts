@@ -326,8 +326,8 @@ try {
     app.use(oidcProvider.callback());
 
     // ── 10. Start server ───────────────────────────────────────────────
-    server = app.listen(config.port, () => {
-        console.info(`Application is listening on port ${config.port}`);
+    server = app.listen(config.port, config.bind_address, () => {
+        console.info(`Application is listening on ${config.bind_address} port ${config.port}`);
         console.info(`Check /.well-known/openid-configuration for details.`);
     });
 
