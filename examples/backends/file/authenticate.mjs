@@ -4,7 +4,7 @@ import { loadUsers, passwordMatches, readRequest, reject, reply } from './lib.mj
 const request = readRequest();
 const users = loadUsers();
 
-const record = users[request.username];
+const record = Object.hasOwn(users, request.username) ? users[request.username] : undefined;
 
 // Hash even when the account is unknown, so that a missing account and a wrong
 // password take the same time to answer.

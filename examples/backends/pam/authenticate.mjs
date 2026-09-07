@@ -11,6 +11,16 @@ const PAM_CHECK = process.env.PAM_CHECK || '/usr/local/libexec/byob-pam-check';
 
 const request = readRequest();
 
+// A zero byte separates the two fields below, so one inside either value would
+// let a caller choose where the split lands.
+const NUL = String.fromCharCode(0);
+if (typeof request.username !== 'string' || typeof request.password !== 'string') {
+    fault('username and password must both be strings');
+}
+if (request.username.includes(NUL) || request.password.includes(NUL)) {
+    reject('refused a username or password containing a zero byte');
+}
+
 // Username and password go to the helper on standard input, each ended by a
 // zero byte. Nothing sensitive appears in the command line or the environment.
 const checker = spawn(PAM_CHECK, [], { stdio: ['pipe', 'inherit', 'inherit'] });
@@ -28,4 +38,4 @@ checker.on('close', (code) => {
 });
 
 checker.stdin.on('error', () => {});
-checker.stdin.end(`${request.username}\0${request.password}\0`);
+checker.stdin.end(`${request.username}${NUL}${request.password}${NUL}`);

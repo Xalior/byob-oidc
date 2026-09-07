@@ -31,6 +31,16 @@ function numberFromEnv(name: string, fallback: number): number {
     return value;
 }
 
+/**
+ * A form body is not trustworthy input. Express turns a repeated field into an
+ * array, so `login=a&login=b` arrives as `['a','b']`, and a percent-encoded
+ * `%00` arrives as a real NUL. A NUL ends a C string, so a backend written in C
+ * would read a different name from the one submitted.
+ */
+function isCredential(value: unknown): value is string {
+    return typeof value === 'string' && !value.includes('\u0000');
+}
+
 function account(accountId: string, claims: Record<string, any>): OIDCAccount {
     return {
         accountId,
@@ -113,13 +123,17 @@ const plugin: ProviderPlugin = {
     },
 
     async authenticate(req: Request): Promise<OIDCAccount | null> {
+        const username = req.body.login;
+        const password = req.body.password;
+
+        if (!isCredential(username) || !isCredential(password)) {
+            console.error('[stdio-auth] refused a login: the submitted name or password was not plain text');
+            req.flash('error', 'Login failed, try again.');
+            return null;
+        }
+
         const result = await runBackend(
-            {
-                version: PROTOCOL_VERSION,
-                operation: 'authenticate',
-                username: req.body.login,
-                password: req.body.password,
-            },
+            { version: PROTOCOL_VERSION, operation: 'authenticate', username, password },
             authenticateOptions,
         );
 

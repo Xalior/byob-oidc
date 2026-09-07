@@ -4,7 +4,7 @@ import { loadUsers, readRequest, reject, reply } from './lib.mjs';
 const request = readRequest();
 const users = loadUsers();
 
-const record = users[request.account_id];
+const record = Object.hasOwn(users, request.account_id) ? users[request.account_id] : undefined;
 if (!record) {
     reject(`no such account: ${request.account_id}`);
 }

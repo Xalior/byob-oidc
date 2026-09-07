@@ -121,6 +121,12 @@ function parseReply(stdout: string, command: string): BackendResult {
         return { status: 'fault', reason: `${command} succeeded but returned no account_id` };
     }
 
+    // This becomes the sub claim in every token. A NUL ends a C string, so two
+    // ids that differ after one could be read as the same person downstream.
+    if (accountId.includes('\u0000')) {
+        return { status: 'fault', reason: `${command} returned an account_id containing a NUL` };
+    }
+
     // Claims pass through as the backend wrote them, except that sub always
     // restates account_id. The two disagreeing would give the account two
     // identities, one in the token and one everywhere else.

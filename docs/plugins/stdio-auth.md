@@ -69,6 +69,11 @@ Lookup:
 {"version":1,"operation":"lookup","account_id":"jane"}
 ```
 
+Both values are plain text with no zero byte in them. The plugin refuses the
+login before running your command otherwise, so a repeated form field arriving
+as a list, or a percent-encoded `%00`, never reaches you. Newlines, quotes and
+any other character do reach you, escaped by JSON.
+
 `version` is `1` for this contract. If the contract ever changes in a way that
 old commands cannot handle, the number will change. Ignore any field you do not
 recognise, so that new fields do not break your command.
@@ -80,6 +85,10 @@ On success, write one JSON object to standard output and exit with code `0`.
 ```json
 {"account_id":"jane","email":"jane@example.com","name":"Jane Smith","groups":["staff","admin"]}
 ```
+
+`account_id` must not contain a zero byte, or the plugin treats the reply as a
+backend failure. It ends up in the `sub` claim, and anything reading that with a
+C string would stop at the zero byte.
 
 `account_id` is required. It is the identity the rest of the system uses, and it
 becomes the `sub` claim in every token issued for this user. Your backend
