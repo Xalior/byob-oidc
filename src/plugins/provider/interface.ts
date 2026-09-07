@@ -33,8 +33,8 @@ export interface ProviderPlugin extends Plugin {
 
     /**
      * What the login form should ask for. A provider that identifies people by
-     * something other than an email address says so here, or the browser will
-     * refuse to submit a name that has no @ in it.
+     * something other than an email address defines it here, or the browser
+     * will refuse to submit a name that has no @ in it.
      * Omitted means an email address.
      */
     loginField?: LoginField;
