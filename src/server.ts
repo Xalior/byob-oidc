@@ -207,9 +207,8 @@ try {
     const viewsDir = themeLayoutsDir && existsSync(themeLayoutsDir) ? themeLayoutsDir : defaultViewsDir;
     app.set('views', viewsDir);
 
-    // What the login form asks a person to type. The provider knows what it
-    // matches on, so it sets the input type. The operator names the field,
-    // because the wording belongs to the site rather than to the provider.
+    // What the login form asks a person to type. LOGIN_LABEL overrides the
+    // label and placeholder the provider gives.
     const providerLoginField = getProvider().loginField ?? DEFAULT_LOGIN_FIELD;
     app.locals.login_field = config.login_label
         ? { ...providerLoginField, label: config.login_label, placeholder: config.login_label.toLowerCase() }

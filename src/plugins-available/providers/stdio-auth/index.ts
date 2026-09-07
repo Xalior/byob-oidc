@@ -104,11 +104,7 @@ const plugin: ProviderPlugin = {
         );
     },
 
-    /**
-     * The backend decides what a person types, and it is rarely an email
-     * address. A text box takes an address as readily as a username, so this
-     * never blocks a backend that does use addresses. LOGIN_LABEL renames it.
-     */
+    /** A text box, so any name the backend recognises can be typed. */
     loginField: {
         type: 'text',
         label: 'Username',

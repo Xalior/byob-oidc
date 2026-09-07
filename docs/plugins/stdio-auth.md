@@ -38,11 +38,9 @@ STDIO_AUTH_CACHE_MAX=1000           # how many lookup results to hold
 STDIO_AUTH_CACHE_TTL_MS=30000       # how long to hold each one
 ```
 
-The login page asks for a `Username` in a plain text box, because the name a
-person types is whatever your backend recognises. A text box takes an email
-address as readily as anything else, so a backend that does use addresses needs
-no change. To reword the label, set the core setting `LOGIN_LABEL`, which
-applies whichever provider is running.
+The login page asks for a `Username` in a plain text box, which takes an email
+address as readily as any other name. The core setting `LOGIN_LABEL` changes
+the wording.
 
 ## The two commands
 

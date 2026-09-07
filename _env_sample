@@ -16,9 +16,8 @@ PORT=5000
 # Docker bridge when a reverse proxy in a container provides TLS and ingress.
 BIND_ADDRESS=0.0.0.0
 
-# What the login page calls the field a person types their name into. The
-# provider decides whether that field takes an email address or any text; this
-# only changes the wording. Unset, each provider uses its own default.
+# What the login page calls the field a person types their name into.
+# Unset, each provider uses its own wording.
 # LOGIN_LABEL=Username
 
 # Session encryption secret
