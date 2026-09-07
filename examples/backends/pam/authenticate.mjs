@@ -2,7 +2,12 @@
 import { spawn } from 'node:child_process';
 import { claimsFor, fault, passwdEntry, readRequest, reject, reply } from './passwd.mjs';
 
-const PAM_CHECK = process.env.PAM_CHECK || new URL('pam_check', import.meta.url).pathname;
+// Where `make install` puts the helper. The provider gives backends a scrubbed
+// environment, so this path cannot come from the provider's settings. PAM_CHECK
+// is honoured only for running this command by hand, and there is deliberately
+// no fall back to the freshly built copy next to this file: that one is not
+// setuid, and using it by accident looks exactly like a wrong password.
+const PAM_CHECK = process.env.PAM_CHECK || '/usr/local/libexec/byob-pam-check';
 
 const request = readRequest();
 

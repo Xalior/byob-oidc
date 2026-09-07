@@ -73,12 +73,24 @@ service account belongs to.
 PROVIDER=stdio-auth
 STDIO_AUTH_AUTHENTICATE_COMMAND=/path/to/examples/backends/pam/authenticate.mjs
 STDIO_AUTH_LOOKUP_COMMAND=/path/to/examples/backends/pam/lookup.mjs
-PAM_CHECK=/usr/local/libexec/byob-pam-check
 ```
 
-`PAM_CHECK` is this example's own setting. Leave it out and the scripts look for
-`pam_check` next to themselves, which is what you want while testing and not
-what you want in production.
+There is no setting here for the helper. The provider gives every backend a
+scrubbed environment holding only `PATH`, so a variable you put in the
+provider's settings does not reach this script. It uses the path that
+`make install` writes to, `/usr/local/libexec/byob-pam-check`.
+
+Change that path in `authenticate.mjs` if you install the helper elsewhere. When
+you run the command by hand, `PAM_CHECK` overrides it:
+
+```sh
+echo '{"version":1,"operation":"authenticate","username":"you","password":"..."}' \
+  | PAM_CHECK=./pam_check ./authenticate.mjs
+```
+
+The freshly built `pam_check` in this folder is not setuid, so it can only check
+the password of whoever runs it. Using it by mistake looks exactly like a wrong
+password, which is why nothing falls back to it.
 
 ## Claims
 
