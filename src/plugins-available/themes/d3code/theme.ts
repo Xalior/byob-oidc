@@ -76,7 +76,7 @@ ${icons}
 ${themeToggle}
 <nav class="navbar navbar-expand-lg">
     <div class="container-fluid">
-        <a class="navbar-brand" href="/"><img src="/theme/nbn-id.png" width="57" alt="${_site_name}"></a>
+        <a class="navbar-brand" href="/">${_site_name}</a>
     </div>
 </nav>
 <main class="flex-grow-1 d-flex flex-column justify-content-center py-4">
